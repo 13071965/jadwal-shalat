@@ -50,15 +50,16 @@ h1 { font-size: 80px; margin: 0; }
   line-height: 1.6;
 }
 
-.green {
-  color: #00ffaa;
-  font-weight: bold;
-}
-
 .active {
   color: #00ff88;
   font-weight: bold;
   font-size: 24px;
+}
+
+.green {
+  color: #00ffaa;
+  margin-top: 10px;
+  font-size: 26px;
 }
 
 * { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
@@ -74,7 +75,7 @@ h1 { font-size: 80px; margin: 0; }
 
 <div class="content">
   <div class="small">JADWAL SHALAT</div>
-  <h1 id="clock">--:--:--</h1>
+  <h1 id="clock"></h1>
 
   <div class="small" id="tanggal"></div>
   <div class="small" id="hijri"></div>
@@ -100,13 +101,25 @@ document.getElementById("tanggal").innerText =
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
 
-// ================= HIJRI =================
+// ================= HIJRI FIX =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
+
+  // ambil nama bulan langsung dari API (lebih aman)
+  let bulan = h.month.en;
+
+  // ganti ke Indonesia
+  bulan = bulan
+    .replace("Shawwal","Syawal")
+    .replace("Sha'ban","Syaban")
+    .replace("Ramadan","Ramadhan")
+    .replace("Dhu al-Hijjah","Zulhijjah")
+    .replace("Dhu al-Qi'dah","Zulkaidah");
+
   document.getElementById("hijri").innerText =
-    `${h.day} ${h.month.en} ${h.year} H`;
+    `${h.day} ${bulan} ${h.year} H`;
 });
 
 // ================= CUACA =================
@@ -117,8 +130,7 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&
     `${d.current_weather.temperature}°C - Medan`;
 })
 .catch(()=>{
-  document.getElementById("cuaca").innerText =
-    "29°C - Medan";
+  document.getElementById("cuaca").innerText = "Medan";
 });
 
 // ================= JADWAL =================
@@ -136,29 +148,29 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
     Maghrib:t.Maghrib,
     Isya:t.Isha
   };
-
-  renderJadwal();
 });
 
 // ================= RENDER + HIGHLIGHT =================
 function renderJadwal(){
+
+  if(Object.keys(jadwal).length===0) return;
+
   const now = new Date();
   const nowMin = now.getHours()*60 + now.getMinutes();
 
   let active = "";
 
-  const times = Object.entries(jadwal);
+  const list = Object.entries(jadwal);
 
-  for (let i = 0; i < times.length; i++) {
-    const [name,time] = times[i];
+  for(let i=0;i<list.length;i++){
+    const [name,time] = list[i];
     const [h,m] = time.split(":").map(Number);
     const tMin = h*60 + m;
 
-    const next = times[i+1];
     let nextMin = 1440;
 
-    if(next){
-      const [nh,nm] = next[1].split(":").map(Number);
+    if(list[i+1]){
+      const [nh,nm] = list[i+1][1].split(":").map(Number);
       nextMin = nh*60 + nm;
     }
 
@@ -169,7 +181,7 @@ function renderJadwal(){
 
   let html = "";
 
-  for (const [name,time] of Object.entries(jadwal)) {
+  for(const [name,time] of Object.entries(jadwal)){
     if(name === active){
       html += `<div class="active">${name} - ${time}</div>`;
     } else {
@@ -180,8 +192,8 @@ function renderJadwal(){
   document.getElementById("jadwal").innerHTML = html;
 }
 
-// update highlight tiap 30 detik
-setInterval(renderJadwal, 30000);
+// update tiap detik (biar responsif)
+setInterval(renderJadwal,1000);
 
 // ================= COUNTDOWN =================
 setInterval(()=>{
@@ -190,34 +202,34 @@ setInterval(()=>{
   const now = new Date();
   const nowMin = now.getHours()*60 + now.getMinutes();
 
-  let nextName = "";
-  let nextTime = null;
+  let nextName="";
+  let nextTime=null;
 
-  for (const [n,t] of Object.entries(jadwal)) {
-    const [h,m] = t.split(":").map(Number);
-    const total = h*60 + m;
+  for(const [n,t] of Object.entries(jadwal)){
+    const [h,m]=t.split(":").map(Number);
+    const total=h*60+m;
 
-    if(total > nowMin){
-      nextName = n;
-      nextTime = new Date();
+    if(total>nowMin){
+      nextName=n;
+      nextTime=new Date();
       nextTime.setHours(h,m,0);
       break;
     }
   }
 
   if(!nextTime){
-    const [h,m] = jadwal.Subuh.split(":").map(Number);
-    nextTime = new Date();
+    const [h,m]=jadwal.Subuh.split(":").map(Number);
+    nextTime=new Date();
     nextTime.setDate(nextTime.getDate()+1);
     nextTime.setHours(h,m,0);
-    nextName = "Subuh";
+    nextName="Subuh";
   }
 
-  const diff = nextTime - now;
+  const diff=nextTime-now;
 
-  const h = Math.floor(diff/3600000);
-  const m = Math.floor((diff%3600000)/60000);
-  const s = Math.floor((diff%60000)/1000);
+  const h=Math.floor(diff/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
 
   document.getElementById("countdown").innerText =
     `Menuju ${nextName}: ${h}j ${m}m ${s}d`;
