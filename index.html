@@ -3,52 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <title>Jadwal Shalat TV</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
-  margin:0;
-  overflow:hidden;
-  font-family:Arial;
-  color:white;
-  background:black;
-  cursor:none;
+body{
+ margin:0;
+ overflow:hidden;
+ font-family:Arial;
+ color:white;
+ background:black;
+ cursor:none;
 }
 
-/* 🔥 TRIK: NAIKKAN LAYAR */
 .wrapper{
-  position:fixed;
-  top:-80px; /* INI KUNCI: geser ke atas */
-  width:100%;
-  height:calc(100% + 80px);
+ position:fixed;
+ top:-80px;
+ width:100%;
+ height:calc(100% + 80px);
 }
 
 .bg{
-  position:absolute;
-  width:100%;
-  height:100%;
-  background-size:cover;
-  background-position:center;
-  transition:opacity 2s ease-in-out;
+ position:absolute;
+ width:100%;
+ height:100%;
+ background-size:cover;
+ background-position:center;
+ transition:opacity 2s;
 }
 
-#bg1{z-index:-2; opacity:1;}
-#bg2{z-index:-3; opacity:0;}
+#bg1{z-index:-2;opacity:1;}
+#bg2{z-index:-3;opacity:0;}
 
 .overlay{
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.45);
+ position:absolute;
+ width:100%;
+ height:100%;
+ background:rgba(0,0,0,0.45);
 }
 
 .content{
-  position:absolute;
-  width:100%;
-  top:50%;
-  transform:translateY(-50%);
-  text-align:center;
+ position:absolute;
+ width:100%;
+ top:50%;
+ transform:translateY(-50%);
+ text-align:center;
 }
 
 h1{font-size:10vw;margin:0;}
@@ -76,25 +74,25 @@ h1{font-size:10vw;margin:0;}
 <div class="small" id="tanggal"></div>
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
-<div class="small" id="cuaca"></div>
+<div class="small" id="cuaca">Memuat suhu...</div>
 <div class="green" id="countdown"></div>
-<div class="jadwal" id="jadwal"></div>
+<div class="jadwal" id="jadwalDiv"></div>
 </div>
 
 </div>
 
 <script>
 
-// ================= JAM =================
+// JAM
 setInterval(()=>{
-clock.innerText=new Date().toLocaleTimeString("id-ID");
+ clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
-// ================= TANGGAL =================
+// TANGGAL
 tanggal.innerText=new Date().toLocaleDateString("id-ID",
 {weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-// ================= HIJRI =================
+// HIJRI
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
@@ -103,21 +101,28 @@ fetch("https://api.aladhan.com/v1/gToH")
  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
-// ================= CUACA =================
+// CUACA (ADA FALLBACK)
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
- cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+ if(d.current_weather){
+   cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+ }else{
+   cuaca.innerText="Medan";
+ }
+})
+.catch(()=>{
+ cuaca.innerText="Medan";
 });
 
-// ================= JADWAL =================
-let jadwal={};
+// JADWAL
+let dataJadwal={};
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 .then(r=>r.json())
 .then(d=>{
  let t=d.data.timings;
- jadwal={
+ dataJadwal={
   Subuh:t.Fajr,
   Dzuhur:t.Dhuhr,
   Ashar:t.Asr,
@@ -126,81 +131,81 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
  };
 });
 
-// ================= HIGHLIGHT =================
+// HIGHLIGHT
 setInterval(()=>{
-if(Object.keys(jadwal).length===0)return;
+ if(Object.keys(dataJadwal).length===0)return;
 
-let now=new Date();
-let nowMin=now.getHours()*60+now.getMinutes();
+ let now=new Date();
+ let nowMin=now.getHours()*60+now.getMinutes();
 
-let active="";
-let list=Object.entries(jadwal);
+ let active="";
+ let list=Object.entries(dataJadwal);
 
-for(let i=0;i<list.length;i++){
- let [n,t]=list[i];
- let [h,m]=t.split(":").map(Number);
- let cur=h*60+m;
+ for(let i=0;i<list.length;i++){
+  let [n,t]=list[i];
+  let [h,m]=t.split(":").map(Number);
+  let cur=h*60+m;
 
- let next=1440;
- if(list[i+1]){
-  let [nh,nm]=list[i+1][1].split(":").map(Number);
-  next=nh*60+nm;
+  let next=1440;
+  if(list[i+1]){
+   let [nh,nm]=list[i+1][1].split(":").map(Number);
+   next=nh*60+nm;
+  }
+
+  if(nowMin>=cur&&nowMin<next)active=n;
  }
 
- if(nowMin>=cur&&nowMin<next)active=n;
-}
+ let html="";
+ for(let [n,t] of Object.entries(dataJadwal)){
+  html+= n===active
+   ? `<div class="active">${n} - ${t}</div>`
+   : `<div>${n} - ${t}</div>`;
+ }
 
-let html="";
-for(let [n,t] of Object.entries(jadwal)){
- html+= n===active
- ? `<div class="active">${n} - ${t}</div>`
- : `<div>${n} - ${t}</div>`;
-}
-
-jadwal.innerHTML=html;
+ jadwalDiv.innerHTML=html;
 
 },1000);
 
-// ================= COUNTDOWN =================
+// COUNTDOWN
 setInterval(()=>{
-if(Object.keys(jadwal).length===0)return;
+ if(Object.keys(dataJadwal).length===0)return;
 
-let now=new Date();
-let nowMin=now.getHours()*60+now.getMinutes();
+ let now=new Date();
+ let nowMin=now.getHours()*60+now.getMinutes();
 
-let nextName="",nextTime=null;
+ let nextName="",nextTime=null;
 
-for(let [n,t] of Object.entries(jadwal)){
- let [h,m]=t.split(":").map(Number);
- let total=h*60+m;
+ for(let [n,t] of Object.entries(dataJadwal)){
+  let [h,m]=t.split(":").map(Number);
+  let total=h*60+m;
 
- if(total>nowMin){
-  nextName=n;
+  if(total>nowMin){
+   nextName=n;
+   nextTime=new Date();
+   nextTime.setHours(h,m,0);
+   break;
+  }
+ }
+
+ if(!nextTime){
+  let [h,m]=dataJadwal.Subuh.split(":").map(Number);
   nextTime=new Date();
+  nextTime.setDate(nextTime.getDate()+1);
   nextTime.setHours(h,m,0);
-  break;
+  nextName="Subuh";
  }
-}
 
-if(!nextTime){
- let [h,m]=jadwal.Subuh.split(":").map(Number);
- nextTime=new Date();
- nextTime.setDate(nextTime.getDate()+1);
- nextTime.setHours(h,m,0);
- nextName="Subuh";
-}
+ let diff=nextTime-now;
 
-let diff=nextTime-now;
+ let h=Math.floor(diff/3600000);
+ let m=Math.floor((diff%3600000)/60000);
+ let s=Math.floor((diff%60000)/1000);
 
-let h=Math.floor(diff/3600000);
-let m=Math.floor((diff%3600000)/60000);
-let s=Math.floor((diff%60000)/1000);
-
-countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
+ countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 
 },1000);
 
-// ================= BACKGROUND =================
+// BACKGROUND
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
