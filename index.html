@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat TV</title>
+<title>Jadwal Shalat Display</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -15,11 +15,12 @@ body{
  cursor:none;
 }
 
+/* 🔥 FIX TV (tidak terlalu naik) */
 .wrapper{
  position:fixed;
- top:-80px;
+ top:-40px;
  width:100%;
- height:calc(100% + 80px);
+ height:calc(100% + 40px);
 }
 
 .bg{
@@ -47,15 +48,41 @@ body{
  top:50%;
  transform:translateY(-50%);
  text-align:center;
+
+ /* 🔥 ANTI KEPOTONG */
+ padding-top:40px;
 }
 
-h1{font-size:10vw;margin:0;}
-.small{font-size:3vw;}
-.jadwal{font-size:2.8vw;margin-top:20px;line-height:1.8;}
-.active{color:#00ff88;font-weight:bold;font-size:3vw;}
-.green{color:#00ffaa;font-size:3vw;margin-top:10px;}
+h1{
+ font-size:10vw;
+ margin:0;
+}
 
-*{text-shadow:0 0 20px rgba(0,0,0,1);}
+.small{
+ font-size:3vw;
+}
+
+.jadwal{
+ font-size:2.8vw;
+ margin-top:20px;
+ line-height:1.8;
+}
+
+.active{
+ color:#00ff88;
+ font-weight:bold;
+ font-size:3vw;
+}
+
+.green{
+ color:#00ffaa;
+ font-size:3vw;
+ margin-top:10px;
+}
+
+*{
+ text-shadow:0 0 20px rgba(0,0,0,1);
+}
 </style>
 </head>
 
@@ -71,11 +98,14 @@ h1{font-size:10vw;margin:0;}
 <div class="content">
 <div class="small">JADWAL SHALAT</div>
 <h1 id="clock"></h1>
+
 <div class="small" id="tanggal"></div>
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
 <div class="small" id="cuaca">Memuat suhu...</div>
+
 <div class="green" id="countdown">Memuat...</div>
+
 <div class="jadwal" id="jadwalDiv">Memuat jadwal...</div>
 </div>
 
@@ -83,7 +113,7 @@ h1{font-size:10vw;margin:0;}
 
 <script>
 
-// ================= FULLSCREEN (KEMBALIKAN) =================
+// ================= FULLSCREEN (HP & LAPTOP) =================
 function goFull(){
  let el=document.documentElement;
  if(el.requestFullscreen){
@@ -91,7 +121,6 @@ function goFull(){
  }
 }
 
-// klik & tap
 document.addEventListener("click", goFull);
 document.addEventListener("touchstart", goFull);
 
@@ -142,7 +171,7 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
  startLoop();
 });
 
-// ================= LOOP =================
+// ================= LOOP UTAMA =================
 function startLoop(){
 
  setInterval(()=>{
@@ -176,8 +205,8 @@ function startLoop(){
 
   jadwalDiv.innerHTML=html;
 
-  // countdown
-  let nextName="",nextTime=null;
+  // ================= COUNTDOWN =================
+  let nextName="", nextTime=null;
 
   for(let [n,t] of list){
    let [h,m]=t.split(":").map(Number);
@@ -221,6 +250,7 @@ images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 let i=0;
 let front=true;
 
+// gambar awal
 bg1.style.backgroundImage=`url('${images[0]}')`;
 
 function changeBG(){
