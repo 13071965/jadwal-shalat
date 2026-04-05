@@ -3,57 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Jadwal Shalat</title>
 
 <style>
-body {
+html, body {
   margin: 0;
   padding: 0;
-  color: white;
+  height: 100%;
+  overflow: hidden;
   font-family: Arial, sans-serif;
-  text-align: center;
-  background-size: cover;
-  background-position: center;
-  transition: background-image 2s ease-in-out;
-  background-color: black;
+  color: white;
 }
 
+/* Background */
+.bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 2s ease-in-out;
+  z-index: -1;
+}
+
+#bg1 { opacity: 1; }
+#bg2 { opacity: 0; }
+
+/* Tengah */
 .container {
-  margin-top: 10%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
 }
 
 .jam {
-  font-size: 80px;
+  font-size: 90px;
   font-weight: bold;
 }
 
 .kecil {
-  font-size: 20px;
-  margin-top: 10px;
+  font-size: 22px;
 }
 
 .hijau {
   color: #00ff88;
-  font-size: 22px;
+  font-size: 26px;
   margin-top: 10px;
 }
 
 .jadwal {
   margin-top: 20px;
-  font-size: 22px;
+  font-size: 24px;
 }
 </style>
 </head>
 
 <body>
 
+<div id="bg1" class="bg"></div>
+<div id="bg2" class="bg"></div>
+
 <div class="container">
   <div>JADWAL SHALAT</div>
-  <div class="jam" id="jam">00:00:00</div>
+  <div class="jam" id="jam"></div>
 
   <div class="kecil" id="tanggal"></div>
+  <div class="kecil" id="hijriah"></div>
   <div class="kecil">Cinta Damai, Medan Helvetia</div>
+  <div class="kecil" id="cuaca"></div>
 
   <div class="hijau" id="countdown"></div>
 
@@ -71,39 +93,69 @@ body {
 function updateJam() {
   let now = new Date();
 
-  let jam = now.toLocaleTimeString("id-ID");
-  let tanggal = now.toLocaleDateString("id-ID", {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  document.getElementById("jam").innerHTML =
+    now.toLocaleTimeString("id-ID");
 
-  document.getElementById("jam").innerHTML = jam;
-  document.getElementById("tanggal").innerHTML = tanggal;
+  document.getElementById("tanggal").innerHTML =
+    now.toLocaleDateString("id-ID", {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
 }
-
 setInterval(updateJam, 1000);
 updateJam();
 
 
-// ================= SLIDESHOW =================
-// AUTO SUPPORT 165 FOTO TANPA TULIS SATU-SATU
-let images = [];
+// ================= HIJRIAH =================
+function updateHijriah() {
+  let now = new Date();
 
-for (let i = 1; i <= 200; i++) {
-  images.push(`bg (${i}).jpg`);
+  let hijri = new Intl.DateTimeFormat(
+    'id-TN-u-ca-islamic',
+    {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }
+  ).format(now);
+
+  document.getElementById("hijriah").innerHTML = hijri + " H";
 }
+updateHijriah();
+
+
+// ================= CUACA (SIMPLE) =================
+document.getElementById("cuaca").innerHTML = "29°C - Medan";
+
+
+// ================= SLIDESHOW HALUS =================
+let images = [
+  "bg (1).jpg",
+  "bg (2).jpg",
+  "bg (3).jpg",
+  "bg (4).jpg",
+  "bg (5).jpg"
+];
 
 let index = 0;
+let current = 1;
 
-function changeBackground() {
-  document.body.style.backgroundImage = `url('${images[index]}')`;
+function changeBg() {
+  let nextBg = current === 1 ? document.getElementById("bg2") : document.getElementById("bg1");
+  let currentBg = current === 1 ? document.getElementById("bg1") : document.getElementById("bg2");
+
+  nextBg.style.backgroundImage = `url('${images[index]}')`;
+  nextBg.style.opacity = 1;
+  currentBg.style.opacity = 0;
+
+  current = current === 1 ? 2 : 1;
   index = (index + 1) % images.length;
 }
 
-setInterval(changeBackground, 10000);
-changeBackground();
+setInterval(changeBg, 10000);
+changeBg();
 
 
 // ================= COUNTDOWN =================
@@ -121,38 +173,35 @@ function getNextPrayer() {
 
   for (let key in jadwal) {
     let waktu = new Date(`${today}T${jadwal[key]}`);
-    if (waktu > now) {
-      return { nama: key, waktu: waktu };
-    }
+    if (waktu > now) return { nama: key, waktu };
   }
 
-  // kalau lewat semua → ke subuh besok
   let besok = new Date();
   besok.setDate(besok.getDate() + 1);
-  let tanggalBesok = besok.toISOString().split("T")[0];
+  let tgl = besok.toISOString().split("T")[0];
 
   return {
     nama: "subuh",
-    waktu: new Date(`${tanggalBesok}T${jadwal.subuh}`)
+    waktu: new Date(`${tgl}T${jadwal.subuh}`)
   };
 }
 
 function updateCountdown() {
   let next = getNextPrayer();
   let now = new Date();
-
   let diff = next.waktu - now;
 
-  let jam = Math.floor(diff / (1000 * 60 * 60));
-  let menit = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  let detik = Math.floor((diff % (1000 * 60)) / 1000);
+  let j = Math.floor(diff / (1000 * 60 * 60));
+  let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  let d = Math.floor((diff % (1000 * 60)) / 1000);
 
   document.getElementById("countdown").innerHTML =
-    `Menuju ${next.nama}: ${jam}j ${menit}m ${detik}d`;
+    `Menuju ${next.nama}: ${j}j ${m}m ${d}d`;
 }
 
 setInterval(updateCountdown, 1000);
 updateCountdown();
+
 </script>
 
 </body>
