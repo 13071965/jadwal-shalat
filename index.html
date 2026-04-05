@@ -12,6 +12,7 @@ body {
   color: white;
 }
 
+/* background layer */
 .bg {
   position: fixed;
   width: 100%;
@@ -29,7 +30,7 @@ body {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.35);
 }
 
 .content {
@@ -45,9 +46,7 @@ h1 {
   margin: 0;
 }
 
-.small {
-  font-size: 24px;
-}
+.small { font-size: 24px; }
 
 .jadwal {
   margin-top: 20px;
@@ -61,7 +60,7 @@ h1 {
 }
 
 * {
-  text-shadow: 0 0 12px rgba(0,0,0,0.9);
+  text-shadow: 0 0 15px rgba(0,0,0,0.9);
 }
 </style>
 </head>
@@ -99,89 +98,71 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ================= TANGGAL =================
-function updateTanggal() {
-  const now = new Date();
-  document.getElementById("tanggal").innerText =
-    now.toLocaleDateString("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
-}
-updateTanggal();
+document.getElementById("tanggal").innerText =
+  new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
 
 // ================= HIJRI =================
-async function getHijri() {
-  const res = await fetch("https://api.aladhan.com/v1/gToH");
-  const data = await res.json();
-  const h = data.data.hijri;
-
-  document.getElementById("hijri").innerText =
-    `${h.day} ${h.month.en} ${h.year} H`;
-}
-getHijri();
+fetch("https://api.aladhan.com/v1/gToH")
+  .then(r => r.json())
+  .then(d => {
+    const h = d.data.hijri;
+    document.getElementById("hijri").innerText =
+      `${h.day} ${h.month.en} ${h.year} H`;
+  });
 
 // ================= CUACA =================
-async function getWeather() {
-  try {
-    const res = await fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true"
-    );
-    const data = await res.json();
-
-    const temp = data.current_weather.temperature;
+fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
+  .then(r => r.json())
+  .then(d => {
     document.getElementById("cuaca").innerText =
-      `${temp}°C - Medan`;
-  } catch {
-    document.getElementById("cuaca").innerText = "Medan";
-  }
-}
-getWeather();
+      `${d.current_weather.temperature}°C - Medan`;
+  });
 
 // ================= JADWAL =================
 let jadwalGlobal = null;
 
-async function getJadwal() {
-  const res = await fetch(
-    "https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia"
-  );
-  const data = await res.json();
-  const t = data.data.timings;
+fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
+  .then(r => r.json())
+  .then(d => {
+    const t = d.data.timings;
 
-  jadwalGlobal = {
-    Subuh: t.Fajr,
-    Dzuhur: t.Dhuhr,
-    Ashar: t.Asr,
-    Maghrib: t.Maghrib,
-    Isya: t.Isha
-  };
+    jadwalGlobal = {
+      Subuh: t.Fajr,
+      Dzuhur: t.Dhuhr,
+      Ashar: t.Asr,
+      Maghrib: t.Maghrib,
+      Isya: t.Isha
+    };
 
-  document.getElementById("jadwal").innerHTML = `
-    Subuh - ${t.Fajr}<br>
-    Dzuhur - ${t.Dhuhr}<br>
-    Ashar - ${t.Asr}<br>
-    Maghrib - ${t.Maghrib}<br>
-    Isya - ${t.Isha}
-  `;
-}
-getJadwal();
+    document.getElementById("jadwal").innerHTML = `
+      Subuh - ${t.Fajr}<br>
+      Dzuhur - ${t.Dhuhr}<br>
+      Ashar - ${t.Asr}<br>
+      Maghrib - ${t.Maghrib}<br>
+      Isya - ${t.Isha}
+    `;
+  });
 
 // ================= COUNTDOWN =================
 function updateCountdown() {
   if (!jadwalGlobal) return;
 
   const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const nowMin = now.getHours()*60 + now.getMinutes();
 
   let nextName = "";
   let nextTime = null;
 
   for (const [name, time] of Object.entries(jadwalGlobal)) {
     const [h, m] = time.split(":").map(Number);
-    const total = h * 60 + m;
+    const total = h*60 + m;
 
-    if (total > currentMinutes) {
+    if (total > nowMin) {
       nextName = name;
       nextTime = new Date();
       nextTime.setHours(h, m, 0);
@@ -192,63 +173,75 @@ function updateCountdown() {
   if (!nextTime) {
     const [h, m] = jadwalGlobal.Subuh.split(":").map(Number);
     nextTime = new Date();
-    nextTime.setDate(nextTime.getDate() + 1);
+    nextTime.setDate(nextTime.getDate()+1);
     nextTime.setHours(h, m, 0);
     nextName = "Subuh";
   }
 
   const diff = nextTime - now;
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  const seconds = Math.floor((diff / 1000) % 60);
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
 
   document.getElementById("countdown").innerText =
-    `Menuju ${nextName}: ${hours}j ${minutes}m ${seconds}d`;
+    `Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 }
 setInterval(updateCountdown, 1000);
 
-// ================= BACKGROUND =================
+// ================= BACKGROUND FIX NO FLASH =================
+
+// daftar gambar
 let images = [];
 for (let i = 1; i <= 165; i++) {
   images.push(`bg (${i}).jpg`);
 }
 
-images.sort((a, b) => {
-  return parseInt(a.match(/\d+/)) - parseInt(b.match(/\d+/));
-});
+// urutkan angka
+images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 
 let index = 0;
-let active = true;
+let showingBg1 = true;
 
-function preload(src) {
-  const img = new Image();
-  img.src = src;
+// preload 3 gambar ke depan (ANTI PUTIH TOTAL)
+function preloadBatch(start) {
+  for (let i = 0; i < 3; i++) {
+    const img = new Image();
+    img.src = images[(start + i) % images.length];
+  }
 }
 
-function changeBackground() {
+function changeBg() {
   const bg1 = document.getElementById("bg1");
   const bg2 = document.getElementById("bg2");
 
   const next = images[index];
-  preload(next);
 
-  if (active) {
-    bg2.style.backgroundImage = `url('${next}')`;
-    bg2.style.opacity = 1;
-    bg1.style.opacity = 0;
-  } else {
-    bg1.style.backgroundImage = `url('${next}')`;
-    bg1.style.opacity = 1;
-    bg2.style.opacity = 0;
-  }
+  // preload sebelum tampil
+  const img = new Image();
+  img.src = next;
 
-  active = !active;
-  index = (index + 1) % images.length;
+  img.onload = () => {
+    if (showingBg1) {
+      bg2.style.backgroundImage = `url('${next}')`;
+      bg2.style.opacity = 1;
+      bg1.style.opacity = 0;
+    } else {
+      bg1.style.backgroundImage = `url('${next}')`;
+      bg1.style.opacity = 1;
+      bg2.style.opacity = 0;
+    }
+
+    showingBg1 = !showingBg1;
+    index = (index + 1) % images.length;
+
+    preloadBatch(index); // preload berikutnya
+  };
 }
 
-changeBackground();
-setInterval(changeBackground, 15000);
+// start
+changeBg();
+setInterval(changeBg, 15000);
 
 </script>
 
