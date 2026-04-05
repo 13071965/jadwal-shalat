@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat</title>
+<title>Jadwal Shalat TV</title>
 
 <style>
 body {
@@ -11,6 +11,7 @@ body {
   font-family: Arial, sans-serif;
   color: white;
   background: black;
+  cursor: none; /* hilangkan kursor */
 }
 
 .bg {
@@ -30,7 +31,7 @@ body {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.45);
 }
 
 .content {
@@ -41,28 +42,36 @@ body {
   text-align: center;
 }
 
-h1 { font-size: 80px; margin: 0; }
-.small { font-size: 24px; }
+h1 {
+  font-size: 120px; /* lebih besar */
+  margin: 0;
+}
+
+.small {
+  font-size: 32px;
+}
 
 .jadwal {
-  margin-top: 20px;
-  font-size: 22px;
-  line-height: 1.6;
+  margin-top: 25px;
+  font-size: 30px;
+  line-height: 1.8;
 }
 
 .active {
   color: #00ff88;
   font-weight: bold;
-  font-size: 24px;
+  font-size: 34px;
 }
 
 .green {
   color: #00ffaa;
-  margin-top: 10px;
-  font-size: 26px;
+  margin-top: 15px;
+  font-size: 34px;
 }
 
-* { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
+* {
+  text-shadow: 0 0 20px rgba(0,0,0,1);
+}
 </style>
 </head>
 
@@ -89,6 +98,13 @@ h1 { font-size: 80px; margin: 0; }
 
 <script>
 
+// ================= AUTO FULLSCREEN =================
+document.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  }
+});
+
 // ================= JAM =================
 setInterval(()=>{
   document.getElementById("clock").innerText =
@@ -101,22 +117,14 @@ document.getElementById("tanggal").innerText =
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
 
-// ================= HIJRI FIX =================
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
 
-  // ambil nama bulan langsung dari API (lebih aman)
   let bulan = h.month.en;
-
-  // ganti ke Indonesia
-  bulan = bulan
-    .replace("Shawwal","Syawal")
-    .replace("Sha'ban","Syaban")
-    .replace("Ramadan","Ramadhan")
-    .replace("Dhu al-Hijjah","Zulhijjah")
-    .replace("Dhu al-Qi'dah","Zulkaidah");
+  bulan = bulan.replace("Shawwal","Syawal");
 
   document.getElementById("hijri").innerText =
     `${h.day} ${bulan} ${h.year} H`;
@@ -150,7 +158,7 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
   };
 });
 
-// ================= RENDER + HIGHLIGHT =================
+// ================= HIGHLIGHT =================
 function renderJadwal(){
 
   if(Object.keys(jadwal).length===0) return;
@@ -192,7 +200,6 @@ function renderJadwal(){
   document.getElementById("jadwal").innerHTML = html;
 }
 
-// update tiap detik (biar responsif)
 setInterval(renderJadwal,1000);
 
 // ================= COUNTDOWN =================
