@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat Display</title>
+<title>Jadwal Shalat TV</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -16,8 +16,16 @@ body {
   cursor:none;
 }
 
-.bg{
+/* 🔥 TRIK: NAIKKAN LAYAR */
+.wrapper{
   position:fixed;
+  top:-80px; /* INI KUNCI: geser ke atas */
+  width:100%;
+  height:calc(100% + 80px);
+}
+
+.bg{
+  position:absolute;
   width:100%;
   height:100%;
   background-size:cover;
@@ -55,6 +63,8 @@ h1{font-size:10vw;margin:0;}
 
 <body>
 
+<div class="wrapper">
+
 <div id="bg1" class="bg"></div>
 <div id="bg2" class="bg"></div>
 
@@ -71,21 +81,13 @@ h1{font-size:10vw;margin:0;}
 <div class="jadwal" id="jadwal"></div>
 </div>
 
-<script>
+</div>
 
-// ================= TAP 1x FULLSCREEN =================
-function goFull(){
-  let el=document.documentElement;
-  if(el.requestFullscreen){
-    el.requestFullscreen().catch(()=>{});
-  }
-}
-document.addEventListener("click", goFull);
-document.addEventListener("touchstart", goFull);
+<script>
 
 // ================= JAM =================
 setInterval(()=>{
-  clock.innerText=new Date().toLocaleTimeString("id-ID");
+clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
 // ================= TANGGAL =================
@@ -96,19 +98,16 @@ tanggal.innerText=new Date().toLocaleDateString("id-ID",
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
-  let h=d.data.hijri;
-  let bulan=h.month.en.replace("Shawwal","Syawal");
-  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
+ let h=d.data.hijri;
+ let bulan=h.month.en.replace("Shawwal","Syawal");
+ hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
 // ================= CUACA =================
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
-  cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
-})
-.catch(()=>{
-  cuaca.innerText="Medan";
+ cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
 });
 
 // ================= JADWAL =================
@@ -117,14 +116,14 @@ let jadwal={};
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 .then(r=>r.json())
 .then(d=>{
-  let t=d.data.timings;
-  jadwal={
-    Subuh:t.Fajr,
-    Dzuhur:t.Dhuhr,
-    Ashar:t.Asr,
-    Maghrib:t.Maghrib,
-    Isya:t.Isha
-  };
+ let t=d.data.timings;
+ jadwal={
+  Subuh:t.Fajr,
+  Dzuhur:t.Dhuhr,
+  Ashar:t.Asr,
+  Maghrib:t.Maghrib,
+  Isya:t.Isha
+ };
 });
 
 // ================= HIGHLIGHT =================
@@ -201,7 +200,7 @@ countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 
 },1000);
 
-// ================= BACKGROUND SUPER HALUS =================
+// ================= BACKGROUND =================
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
@@ -212,12 +211,6 @@ images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 let i=0;
 let front=true;
 
-// preload awal
-for(let j=0;j<8;j++){
- new Image().src=images[j];
-}
-
-// set awal
 bg1.style.backgroundImage=`url('${images[0]}')`;
 
 function changeBG(){
