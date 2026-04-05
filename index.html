@@ -75,24 +75,36 @@ h1{font-size:10vw;margin:0;}
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
 <div class="small" id="cuaca">Memuat suhu...</div>
-<div class="green" id="countdown"></div>
-<div class="jadwal" id="jadwalDiv"></div>
+<div class="green" id="countdown">Memuat...</div>
+<div class="jadwal" id="jadwalDiv">Memuat jadwal...</div>
 </div>
 
 </div>
 
 <script>
 
-// JAM
+// ================= FULLSCREEN (KEMBALIKAN) =================
+function goFull(){
+ let el=document.documentElement;
+ if(el.requestFullscreen){
+  el.requestFullscreen().catch(()=>{});
+ }
+}
+
+// klik & tap
+document.addEventListener("click", goFull);
+document.addEventListener("touchstart", goFull);
+
+// ================= JAM =================
 setInterval(()=>{
  clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
-// TANGGAL
+// ================= TANGGAL =================
 tanggal.innerText=new Date().toLocaleDateString("id-ID",
 {weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-// HIJRI
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
@@ -101,27 +113,24 @@ fetch("https://api.aladhan.com/v1/gToH")
  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
-// CUACA (ADA FALLBACK)
+// ================= CUACA =================
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
- if(d.current_weather){
-   cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
- }else{
-   cuaca.innerText="Medan";
- }
+ cuaca.innerText = d.current_weather
+  ? `${d.current_weather.temperature}°C - Medan`
+  : "Medan";
 })
-.catch(()=>{
- cuaca.innerText="Medan";
-});
+.catch(()=>cuaca.innerText="Medan");
 
-// JADWAL
-let dataJadwal={};
+// ================= JADWAL =================
+let dataJadwal=null;
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 .then(r=>r.json())
 .then(d=>{
  let t=d.data.timings;
+
  dataJadwal={
   Subuh:t.Fajr,
   Dzuhur:t.Dhuhr,
@@ -129,83 +138,79 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
   Maghrib:t.Maghrib,
   Isya:t.Isha
  };
+
+ startLoop();
 });
 
-// HIGHLIGHT
-setInterval(()=>{
- if(Object.keys(dataJadwal).length===0)return;
+// ================= LOOP =================
+function startLoop(){
 
- let now=new Date();
- let nowMin=now.getHours()*60+now.getMinutes();
+ setInterval(()=>{
 
- let active="";
- let list=Object.entries(dataJadwal);
+  let now=new Date();
+  let nowMin=now.getHours()*60+now.getMinutes();
 
- for(let i=0;i<list.length;i++){
-  let [n,t]=list[i];
-  let [h,m]=t.split(":").map(Number);
-  let cur=h*60+m;
+  let active="";
+  let list=Object.entries(dataJadwal);
 
-  let next=1440;
-  if(list[i+1]){
-   let [nh,nm]=list[i+1][1].split(":").map(Number);
-   next=nh*60+nm;
+  for(let i=0;i<list.length;i++){
+   let [n,t]=list[i];
+   let [h,m]=t.split(":").map(Number);
+   let cur=h*60+m;
+
+   let next=1440;
+   if(list[i+1]){
+    let [nh,nm]=list[i+1][1].split(":").map(Number);
+    next=nh*60+nm;
+   }
+
+   if(nowMin>=cur&&nowMin<next) active=n;
   }
 
-  if(nowMin>=cur&&nowMin<next)active=n;
- }
+  let html="";
+  for(let [n,t] of list){
+   html+= n===active
+    ? `<div class="active">${n} - ${t}</div>`
+    : `<div>${n} - ${t}</div>`;
+  }
 
- let html="";
- for(let [n,t] of Object.entries(dataJadwal)){
-  html+= n===active
-   ? `<div class="active">${n} - ${t}</div>`
-   : `<div>${n} - ${t}</div>`;
- }
+  jadwalDiv.innerHTML=html;
 
- jadwalDiv.innerHTML=html;
+  // countdown
+  let nextName="",nextTime=null;
 
-},1000);
+  for(let [n,t] of list){
+   let [h,m]=t.split(":").map(Number);
+   let total=h*60+m;
 
-// COUNTDOWN
-setInterval(()=>{
- if(Object.keys(dataJadwal).length===0)return;
+   if(total>nowMin){
+    nextName=n;
+    nextTime=new Date();
+    nextTime.setHours(h,m,0);
+    break;
+   }
+  }
 
- let now=new Date();
- let nowMin=now.getHours()*60+now.getMinutes();
-
- let nextName="",nextTime=null;
-
- for(let [n,t] of Object.entries(dataJadwal)){
-  let [h,m]=t.split(":").map(Number);
-  let total=h*60+m;
-
-  if(total>nowMin){
-   nextName=n;
+  if(!nextTime){
+   let [h,m]=dataJadwal.Subuh.split(":").map(Number);
    nextTime=new Date();
+   nextTime.setDate(nextTime.getDate()+1);
    nextTime.setHours(h,m,0);
-   break;
+   nextName="Subuh";
   }
- }
 
- if(!nextTime){
-  let [h,m]=dataJadwal.Subuh.split(":").map(Number);
-  nextTime=new Date();
-  nextTime.setDate(nextTime.getDate()+1);
-  nextTime.setHours(h,m,0);
-  nextName="Subuh";
- }
+  let diff=nextTime-now;
 
- let diff=nextTime-now;
+  let h=Math.floor(diff/3600000);
+  let m=Math.floor((diff%3600000)/60000);
+  let s=Math.floor((diff%60000)/1000);
 
- let h=Math.floor(diff/3600000);
- let m=Math.floor((diff%3600000)/60000);
- let s=Math.floor((diff%60000)/1000);
+  countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 
- countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
+ },1000);
+}
 
-},1000);
-
-// BACKGROUND
+// ================= BACKGROUND =================
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
