@@ -10,7 +10,7 @@ body {
   overflow: hidden;
   font-family: Arial, sans-serif;
   color: white;
-  background: black; /* anti putih */
+  background: black;
 }
 
 .bg {
@@ -43,8 +43,23 @@ body {
 
 h1 { font-size: 80px; margin: 0; }
 .small { font-size: 24px; }
-.jadwal { margin-top: 20px; font-size: 22px; }
-.green { color: #00ffaa; margin-top: 10px; font-size: 26px; }
+
+.jadwal {
+  margin-top: 20px;
+  font-size: 22px;
+  line-height: 1.6;
+}
+
+.green {
+  color: #00ffaa;
+  font-weight: bold;
+}
+
+.active {
+  color: #00ff88;
+  font-weight: bold;
+  font-size: 24px;
+}
 
 * { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
 </style>
@@ -64,9 +79,9 @@ h1 { font-size: 80px; margin: 0; }
   <div class="small" id="tanggal"></div>
   <div class="small" id="hijri"></div>
   <div class="small">Cinta Damai, Medan Helvetia</div>
-  <div class="small" id="cuaca">Memuat suhu...</div>
+  <div class="small" id="cuaca"></div>
 
-  <div class="green" id="countdown">Menghitung...</div>
+  <div class="green" id="countdown"></div>
 
   <div class="jadwal" id="jadwal"></div>
 </div>
@@ -85,29 +100,13 @@ document.getElementById("tanggal").innerText =
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
 
-// ================= HIJRI (INDONESIA FIX) =================
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
-
-  const bulan = {
-    "Muharram":"Muharram",
-    "Safar":"Safar",
-    "Rabi' al-Awwal":"Rabiul Awal",
-    "Rabi' al-Thani":"Rabiul Akhir",
-    "Jumada al-Ula":"Jumadil Awal",
-    "Jumada al-Akhirah":"Jumadil Akhir",
-    "Rajab":"Rajab",
-    "Sha'ban":"Syaban",
-    "Ramadan":"Ramadhan",
-    "Shawwal":"Syawal",
-    "Dhu al-Qi'dah":"Zulkaidah",
-    "Dhu al-Hijjah":"Zulhijjah"
-  };
-
   document.getElementById("hijri").innerText =
-    `${h.day} ${bulan[h.month.en]} ${h.year} H`;
+    `${h.day} ${h.month.en} ${h.year} H`;
 });
 
 // ================= CUACA =================
@@ -119,7 +118,7 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&
 })
 .catch(()=>{
   document.getElementById("cuaca").innerText =
-    "29°C - Medan"; // fallback
+    "29°C - Medan";
 });
 
 // ================= JADWAL =================
@@ -138,14 +137,51 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
     Isya:t.Isha
   };
 
-  document.getElementById("jadwal").innerHTML = `
-    Subuh - ${t.Fajr}<br>
-    Dzuhur - ${t.Dhuhr}<br>
-    Ashar - ${t.Asr}<br>
-    Maghrib - ${t.Maghrib}<br>
-    Isya - ${t.Isha}
-  `;
+  renderJadwal();
 });
+
+// ================= RENDER + HIGHLIGHT =================
+function renderJadwal(){
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  let active = "";
+
+  const times = Object.entries(jadwal);
+
+  for (let i = 0; i < times.length; i++) {
+    const [name,time] = times[i];
+    const [h,m] = time.split(":").map(Number);
+    const tMin = h*60 + m;
+
+    const next = times[i+1];
+    let nextMin = 1440;
+
+    if(next){
+      const [nh,nm] = next[1].split(":").map(Number);
+      nextMin = nh*60 + nm;
+    }
+
+    if(nowMin >= tMin && nowMin < nextMin){
+      active = name;
+    }
+  }
+
+  let html = "";
+
+  for (const [name,time] of Object.entries(jadwal)) {
+    if(name === active){
+      html += `<div class="active">${name} - ${time}</div>`;
+    } else {
+      html += `<div>${name} - ${time}</div>`;
+    }
+  }
+
+  document.getElementById("jadwal").innerHTML = html;
+}
+
+// update highlight tiap 30 detik
+setInterval(renderJadwal, 30000);
 
 // ================= COUNTDOWN =================
 setInterval(()=>{
@@ -188,7 +224,7 @@ setInterval(()=>{
 
 },1000);
 
-// ================= BACKGROUND SUPER STABIL =================
+// ================= BACKGROUND =================
 let images=[];
 for(let i=1;i<=165;i++){
   images.push(`bg (${i}).jpg`);
@@ -198,11 +234,6 @@ images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 
 let i=0;
 let show1=true;
-
-// preload awal 5 gambar
-for(let j=0;j<5;j++){
-  new Image().src = images[j];
-}
 
 function gantiBG(){
   const bg1=document.getElementById("bg1");
