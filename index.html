@@ -1,295 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jam Shalat Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Jadwal Shalat</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  color:white;
-  text-align:center;
-  overflow:hidden;
-  cursor:none;
+body {
+  margin: 0;
+  padding: 0;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-size: cover;
+  background-position: center;
+  transition: background-image 2s ease-in-out;
+  background-color: black;
 }
 
-.bg{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-size:cover;
-  background-position:center;
-  transition:opacity 2s;
-  background-color:black;
+.container {
+  margin-top: 10%;
 }
 
-#bg1{ z-index:-2; }
-#bg2{ z-index:-1; opacity:0; }
-
-.overlay{
-  background:rgba(0,0,0,0.45);
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
+.jam {
+  font-size: 80px;
+  font-weight: bold;
 }
 
-#jam{ font-size:90px; font-weight:bold; }
-.info{ font-size:24px; }
-.countdown{ font-size:32px; color:#00ff88; }
-.jadwal{ font-size:30px; margin-top:20px; }
-.active{ color:#00ff88; font-weight:bold; }
-
-.setting{
-  position:fixed;
-  top:10px;
-  right:10px;
-  background:rgba(0,0,0,0.7);
-  padding:10px;
-  border-radius:10px;
-  font-size:14px;
-  display:none;
+.kecil {
+  font-size: 20px;
+  margin-top: 10px;
 }
-button{ margin:2px; }
+
+.hijau {
+  color: #00ff88;
+  font-size: 22px;
+  margin-top: 10px;
+}
+
+.jadwal {
+  margin-top: 20px;
+  font-size: 22px;
+}
 </style>
 </head>
 
 <body>
 
-<div id="bg1" class="bg"></div>
-<div id="bg2" class="bg"></div>
+<div class="container">
+  <div>JADWAL SHALAT</div>
+  <div class="jam" id="jam">00:00:00</div>
 
-<div class="overlay">
+  <div class="kecil" id="tanggal"></div>
+  <div class="kecil">Cinta Damai, Medan Helvetia</div>
 
-<h1>JADWAL SHALAT</h1>
+  <div class="hijau" id="countdown"></div>
 
-<div id="jam"></div>
-
-<div class="info" id="tanggalMasehi"></div>
-<div class="info" id="tanggalHijriyah"></div>
-
-<div class="info">Cinta Damai, Medan Helvetia</div>
-<div class="info" id="cuaca">Loading...</div>
-
-<div class="countdown" id="countdown"></div>
-
-<div class="jadwal">
-  <div id="Subuh"></div>
-  <div id="Dzuhur"></div>
-  <div id="Ashar"></div>
-  <div id="Maghrib"></div>
-  <div id="Isya"></div>
-</div>
-
-</div>
-
-<div class="setting">
-<b>Offset (menit)</b><br>
-Subuh <button onclick="ubah('Subuh',1)">+</button><button onclick="ubah('Subuh',-1)">-</button><br>
-Dzuhur <button onclick="ubah('Dzuhur',1)">+</button><button onclick="ubah('Dzuhur',-1)">-</button><br>
-Ashar <button onclick="ubah('Ashar',1)">+</button><button onclick="ubah('Ashar',-1)">-</button><br>
-Maghrib <button onclick="ubah('Maghrib',1)">+</button><button onclick="ubah('Maghrib',-1)">-</button><br>
-Isya <button onclick="ubah('Isya',1)">+</button><button onclick="ubah('Isya',-1)">-</button>
+  <div class="jadwal">
+    Subuh - 05:08<br>
+    Dzuhur - 12:31<br>
+    Ashar - 15:36<br>
+    Maghrib - 18:36<br>
+    Isya - 19:44
+  </div>
 </div>
 
 <script>
+// ================= JAM =================
+function updateJam() {
+  let now = new Date();
 
-// ===== CONFIG =====
-const TOTAL_GAMBAR = 165;
-const DURASI = 10000;
-
-// ===== TOGGLE PANEL =====
-document.addEventListener("keydown", function(e){
-  if(e.key.toLowerCase()==="s"){
-    let panel=document.querySelector(".setting");
-    panel.style.display = panel.style.display==="none" ? "block":"none";
-  }
-});
-
-// ===== BACKGROUND HALUS =====
-let images=[];
-for(let i=1;i<=TOTAL_GAMBAR;i++){
-  images.push(`images/bg (${i}).jpg`);
-}
-
-let index=0, aktif=true;
-
-function preload(src){
-  return new Promise(res=>{
-    let img=new Image();
-    img.src=src;
-    img.onload=res;
-    img.onerror=res;
+  let jam = now.toLocaleTimeString("id-ID");
+  let tanggal = now.toLocaleDateString("id-ID", {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   });
+
+  document.getElementById("jam").innerHTML = jam;
+  document.getElementById("tanggal").innerHTML = tanggal;
 }
 
-async function gantiBG(){
-  let next = images[index];
-  await preload(next);
-
-  let bg1=document.getElementById("bg1");
-  let bg2=document.getElementById("bg2");
-
-  if(aktif){
-    bg2.style.backgroundImage=`url('${next}')`;
-    bg2.style.opacity=1;
-    bg1.style.opacity=0;
-  }else{
-    bg1.style.backgroundImage=`url('${next}')`;
-    bg1.style.opacity=1;
-    bg2.style.opacity=0;
-  }
-
-  aktif=!aktif;
-  index=(index+1)%images.length;
-}
-
-setInterval(gantiBG,DURASI);
-gantiBG();
-
-// ===== JAM =====
-function updateJam(){
-  let now=new Date();
-  document.getElementById("jam").innerText=
-    now.toLocaleTimeString('id-ID',{hour12:false});
-}
-setInterval(updateJam,1000);
+setInterval(updateJam, 1000);
 updateJam();
 
-// ===== TANGGAL =====
-async function loadTanggal(){
-  let now=new Date();
 
-  document.getElementById("tanggalMasehi").innerText=
-    now.toLocaleDateString('id-ID',{
-      weekday:'long',day:'numeric',month:'long',year:'numeric'
-    });
+// ================= SLIDESHOW =================
+// AUTO SUPPORT 165 FOTO TANPA TULIS SATU-SATU
+let images = [];
 
-  try{
-    let res=await fetch("https://api.aladhan.com/v1/gToH");
-    let data=await res.json();
-    let h=data.data.hijri;
-
-    let nama=h.month.en || "";
-    nama=nama.replace("Shawwal","Syawal").replace("Shawwāl","Syawal");
-
-    document.getElementById("tanggalHijriyah").innerText=
-      `${h.day} ${nama} ${h.year} H`;
-
-  }catch{
-    document.getElementById("tanggalHijriyah").innerText="Hijriyah offline";
-  }
+for (let i = 1; i <= 200; i++) {
+  images.push(`bg (${i}).jpg`);
 }
 
-loadTanggal();
-setInterval(loadTanggal,3600000);
+let index = 0;
 
-// ===== CUACA =====
-async function loadCuaca(){
-  try{
-    let res=await fetch("https://wttr.in/Medan?format=j1");
-    let data=await res.json();
-
-    document.getElementById("cuaca").innerText=
-      `🌡️ ${data.current_condition[0].temp_C}°C - ${data.current_condition[0].weatherDesc[0].value}`;
-  }catch{
-    document.getElementById("cuaca").innerText="Cuaca offline";
-  }
-}
-loadCuaca();
-setInterval(loadCuaca,600000);
-
-// ===== OFFSET =====
-let offset=JSON.parse(localStorage.getItem("offset")||'{}');
-
-function ubah(nama,val){
-  offset[nama]=(offset[nama]||0)+val;
-  localStorage.setItem("offset",JSON.stringify(offset));
-  loadJadwal();
+function changeBackground() {
+  document.body.style.backgroundImage = `url('${images[index]}')`;
+  index = (index + 1) % images.length;
 }
 
-// ===== JADWAL =====
-let jadwal={};
+setInterval(changeBackground, 10000);
+changeBackground();
 
-function tambah(waktu, menit){
-  let [h,m]=waktu.split(":").map(Number);
-  m+=menit;
-  if(m>=60){h++;m-=60;}
-  if(m<0){h--;m+=60;}
-  return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
+
+// ================= COUNTDOWN =================
+let jadwal = {
+  subuh: "05:08",
+  dzuhur: "12:31",
+  ashar: "15:36",
+  maghrib: "18:36",
+  isya: "19:44"
+};
+
+function getNextPrayer() {
+  let now = new Date();
+  let today = now.toISOString().split("T")[0];
+
+  for (let key in jadwal) {
+    let waktu = new Date(`${today}T${jadwal[key]}`);
+    if (waktu > now) {
+      return { nama: key, waktu: waktu };
+    }
+  }
+
+  // kalau lewat semua → ke subuh besok
+  let besok = new Date();
+  besok.setDate(besok.getDate() + 1);
+  let tanggalBesok = besok.toISOString().split("T")[0];
+
+  return {
+    nama: "subuh",
+    waktu: new Date(`${tanggalBesok}T${jadwal.subuh}`)
+  };
 }
 
-async function loadJadwal(){
-  try{
-    let res=await fetch("https://api.aladhan.com/v1/timings?latitude=3.595&longitude=98.672&method=20");
-    let data=await res.json();
-    let t=data.data.timings;
+function updateCountdown() {
+  let next = getNextPrayer();
+  let now = new Date();
 
-    jadwal={
-      Subuh:tambah(t.Fajr,offset.Subuh??2),
-      Dzuhur:tambah(t.Dhuhr,offset.Dzuhur??3),
-      Ashar:tambah(t.Asr,offset.Ashar??2),
-      Maghrib:tambah(t.Maghrib,offset.Maghrib??3),
-      Isya:tambah(t.Isha,offset.Isya??2)
-    };
+  let diff = next.waktu - now;
 
-    localStorage.setItem("jadwal_backup",JSON.stringify(jadwal));
+  let jam = Math.floor(diff / (1000 * 60 * 60));
+  let menit = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  let detik = Math.floor((diff % (1000 * 60)) / 1000);
 
-  }catch{
-    let backup=localStorage.getItem("jadwal_backup");
-    if(backup) jadwal=JSON.parse(backup);
-  }
-
-  for(let k in jadwal){
-    document.getElementById(k).innerText=`${k} - ${jadwal[k]}`;
-  }
+  document.getElementById("countdown").innerHTML =
+    `Menuju ${next.nama}: ${jam}j ${menit}m ${detik}d`;
 }
 
-loadJadwal();
-setInterval(loadJadwal,3600000);
-
-// ===== COUNTDOWN =====
-setInterval(()=>{
-  if(Object.keys(jadwal).length===0) return;
-
-  let now=new Date();
-  let current=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
-
-  let next="",time=999999;
-
-  for(let k in jadwal){
-    let [h,m]=jadwal[k].split(":");
-    let t=h*3600+m*60;
-    if(t>current && t<time){time=t;next=k;}
-  }
-
-  if(!next){
-    let [h,m]=jadwal.Subuh.split(":");
-    time=h*3600+m*60+86400;
-    next="Subuh";
-  }
-
-  let d=time-current;
-  let j=Math.floor(d/3600);
-  let m=Math.floor((d%3600)/60);
-  let s=d%60;
-
-  document.getElementById("countdown").innerText=
-    `Menuju ${next}: ${j}j ${m}m ${s}d`;
-
-  for(let k in jadwal){
-    document.getElementById(k).classList.remove("active");
-  }
-  document.getElementById(next).classList.add("active");
-
-},1000);
-
-// ===== AUTO FULLSCREEN =====
-setTimeout(()=>{
-  document.documentElement.requestFullscreen().catch(()=>{});
-},2000);
-
+setInterval(updateCountdown, 1000);
+updateCountdown();
 </script>
 
 </body>
