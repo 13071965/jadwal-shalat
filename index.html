@@ -2,63 +2,64 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jadwal Shalat</title>
 
 <style>
-html, body {
+body {
   margin: 0;
-  padding: 0;
-  height: 100%;
   overflow: hidden;
   font-family: Arial, sans-serif;
   color: white;
 }
 
-/* Background */
 .bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
   transition: opacity 2s ease-in-out;
-  z-index: -1;
 }
 
-#bg1 { opacity: 1; }
-#bg2 { opacity: 0; }
+#bg1 { z-index: -2; }
+#bg2 { z-index: -3; }
 
-/* Tengah */
-.container {
+.overlay {
   position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.25);
+}
+
+.content {
+  position: absolute;
+  width: 100%;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   text-align: center;
 }
 
-.jam {
-  font-size: 90px;
-  font-weight: bold;
+h1 {
+  font-size: 80px;
+  margin: 0;
 }
 
-.kecil {
-  font-size: 22px;
-}
-
-.hijau {
-  color: #00ff88;
-  font-size: 26px;
-  margin-top: 10px;
+.small {
+  font-size: 24px;
 }
 
 .jadwal {
   margin-top: 20px;
-  font-size: 24px;
+  font-size: 22px;
+}
+
+.green {
+  color: #00ffaa;
+  margin-top: 10px;
+}
+
+* {
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
 }
 </style>
 </head>
@@ -68,139 +69,119 @@ html, body {
 <div id="bg1" class="bg"></div>
 <div id="bg2" class="bg"></div>
 
-<div class="container">
-  <div>JADWAL SHALAT</div>
-  <div class="jam" id="jam"></div>
+<div class="overlay"></div>
 
-  <div class="kecil" id="tanggal"></div>
-  <div class="kecil" id="hijriah"></div>
-  <div class="kecil">Cinta Damai, Medan Helvetia</div>
-  <div class="kecil" id="cuaca"></div>
+<div class="content">
+  <div class="small">JADWAL SHALAT</div>
+  <h1 id="clock"></h1>
 
-  <div class="hijau" id="countdown"></div>
+  <div class="small" id="tanggal"></div>
+  <div class="small" id="hijri"></div>
+  <div class="small">Cinta Damai, Medan Helvetia</div>
+  <div class="small" id="cuaca"></div>
 
-  <div class="jadwal">
-    Subuh - 05:08<br>
-    Dzuhur - 12:31<br>
-    Ashar - 15:36<br>
-    Maghrib - 18:36<br>
-    Isya - 19:44
-  </div>
+  <div class="green" id="countdown"></div>
+
+  <div class="jadwal" id="jadwal"></div>
 </div>
 
 <script>
-// ================= JAM =================
-function updateJam() {
-  let now = new Date();
 
-  document.getElementById("jam").innerHTML =
+// ================== JAM ==================
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").innerText =
     now.toLocaleTimeString("id-ID");
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-  document.getElementById("tanggal").innerHTML =
+// ================== TANGGAL ==================
+function updateTanggal() {
+  const now = new Date();
+  document.getElementById("tanggal").innerText =
     now.toLocaleDateString("id-ID", {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
     });
 }
-setInterval(updateJam, 1000);
-updateJam();
+updateTanggal();
 
+// ================== HIJRI (FIX DOUBLE H) ==================
+async function getHijri() {
+  const res = await fetch("https://api.aladhan.com/v1/gToH");
+  const data = await res.json();
+  const h = data.data.hijri;
 
-// ================= HIJRIAH =================
-function updateHijriah() {
-  let now = new Date();
-
-  let hijri = new Intl.DateTimeFormat(
-    'id-TN-u-ca-islamic',
-    {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }
-  ).format(now);
-
-  document.getElementById("hijriah").innerHTML = hijri + " H";
+  document.getElementById("hijri").innerText =
+    `${h.day} ${h.month.en} ${h.year} H`;
 }
-updateHijriah();
+getHijri();
 
+// ================== JADWAL SHALAT ==================
+async function getJadwal() {
+  const res = await fetch(
+    "https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia"
+  );
+  const data = await res.json();
+  const t = data.data.timings;
 
-// ================= CUACA (SIMPLE) =================
-document.getElementById("cuaca").innerHTML = "29°C - Medan";
+  document.getElementById("jadwal").innerHTML = `
+    Subuh - ${t.Fajr}<br>
+    Dzuhur - ${t.Dhuhr}<br>
+    Ashar - ${t.Asr}<br>
+    Maghrib - ${t.Maghrib}<br>
+    Isya - ${t.Isha}
+  `;
+}
+getJadwal();
 
+// ================== BACKGROUND OTOMATIS ==================
 
-// ================= SLIDESHOW HALUS =================
-let images = [
-  "bg (1).jpg",
-  "bg (2).jpg",
-  "bg (3).jpg",
-  "bg (4).jpg",
-  "bg (5).jpg"
-];
+// Ambil semua nama file (karena GitHub tidak bisa auto list folder,
+// kita buat manual generate 1–165 sesuai file Anda)
 
+let images = [];
+for (let i = 1; i <= 165; i++) {
+  images.push(`bg (${i}).jpg`);
+}
+
+// Sort berdasarkan angka biar rapi
+images.sort((a, b) => {
+  const numA = parseInt(a.match(/\d+/));
+  const numB = parseInt(b.match(/\d+/));
+  return numA - numB;
+});
+
+// Slideshow halus
 let index = 0;
-let current = 1;
+let active = true;
 
-function changeBg() {
-  let nextBg = current === 1 ? document.getElementById("bg2") : document.getElementById("bg1");
-  let currentBg = current === 1 ? document.getElementById("bg1") : document.getElementById("bg2");
+function changeBackground() {
+  const bg1 = document.getElementById("bg1");
+  const bg2 = document.getElementById("bg2");
 
-  nextBg.style.backgroundImage = `url('${images[index]}')`;
-  nextBg.style.opacity = 1;
-  currentBg.style.opacity = 0;
+  const nextImage = images[index];
 
-  current = current === 1 ? 2 : 1;
+  if (active) {
+    bg2.style.backgroundImage = `url('${nextImage}')`;
+    bg2.style.opacity = 1;
+    bg1.style.opacity = 0;
+  } else {
+    bg1.style.backgroundImage = `url('${nextImage}')`;
+    bg1.style.opacity = 1;
+    bg2.style.opacity = 0;
+  }
+
+  active = !active;
   index = (index + 1) % images.length;
 }
 
-setInterval(changeBg, 10000);
-changeBg();
-
-
-// ================= COUNTDOWN =================
-let jadwal = {
-  subuh: "05:08",
-  dzuhur: "12:31",
-  ashar: "15:36",
-  maghrib: "18:36",
-  isya: "19:44"
-};
-
-function getNextPrayer() {
-  let now = new Date();
-  let today = now.toISOString().split("T")[0];
-
-  for (let key in jadwal) {
-    let waktu = new Date(`${today}T${jadwal[key]}`);
-    if (waktu > now) return { nama: key, waktu };
-  }
-
-  let besok = new Date();
-  besok.setDate(besok.getDate() + 1);
-  let tgl = besok.toISOString().split("T")[0];
-
-  return {
-    nama: "subuh",
-    waktu: new Date(`${tgl}T${jadwal.subuh}`)
-  };
-}
-
-function updateCountdown() {
-  let next = getNextPrayer();
-  let now = new Date();
-  let diff = next.waktu - now;
-
-  let j = Math.floor(diff / (1000 * 60 * 60));
-  let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  let d = Math.floor((diff % (1000 * 60)) / 1000);
-
-  document.getElementById("countdown").innerHTML =
-    `Menuju ${next.nama}: ${j}j ${m}m ${d}d`;
-}
-
-setInterval(updateCountdown, 1000);
-updateCountdown();
+// start
+changeBackground();
+setInterval(changeBackground, 10000); // 10 detik
 
 </script>
 
