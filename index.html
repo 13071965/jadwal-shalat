@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Jam Shalat Pro</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  color:white;
+  text-align:center;
+  overflow:hidden;
+  cursor:none;
+}
+
+.bg{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background-size:cover;
+  background-position:center;
+  transition:opacity 2s;
+  background-color:black;
+}
+
+#bg1{ z-index:-2; }
+#bg2{ z-index:-1; opacity:0; }
+
+.overlay{
+  background:rgba(0,0,0,0.45);
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+#jam{ font-size:90px; font-weight:bold; }
+.info{ font-size:24px; }
+.countdown{ font-size:32px; color:#00ff88; }
+.jadwal{ font-size:30px; margin-top:20px; }
+.active{ color:#00ff88; font-weight:bold; }
+
+.setting{
+  position:fixed;
+  top:10px;
+  right:10px;
+  background:rgba(0,0,0,0.7);
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+  display:none;
+}
+button{ margin:2px; }
+</style>
+</head>
+
+<body>
+
+<div id="bg1" class="bg"></div>
+<div id="bg2" class="bg"></div>
+
+<div class="overlay">
+
+<h1>JADWAL SHALAT</h1>
+
+<div id="jam"></div>
+
+<div class="info" id="tanggalMasehi"></div>
+<div class="info" id="tanggalHijriyah"></div>
+
+<div class="info">Cinta Damai, Medan Helvetia</div>
+<div class="info" id="cuaca">Loading...</div>
+
+<div class="countdown" id="countdown"></div>
+
+<div class="jadwal">
+  <div id="Subuh"></div>
+  <div id="Dzuhur"></div>
+  <div id="Ashar"></div>
+  <div id="Maghrib"></div>
+  <div id="Isya"></div>
+</div>
+
+</div>
+
+<div class="setting">
+<b>Offset (menit)</b><br>
+Subuh <button onclick="ubah('Subuh',1)">+</button><button onclick="ubah('Subuh',-1)">-</button><br>
+Dzuhur <button onclick="ubah('Dzuhur',1)">+</button><button onclick="ubah('Dzuhur',-1)">-</button><br>
+Ashar <button onclick="ubah('Ashar',1)">+</button><button onclick="ubah('Ashar',-1)">-</button><br>
+Maghrib <button onclick="ubah('Maghrib',1)">+</button><button onclick="ubah('Maghrib',-1)">-</button><br>
+Isya <button onclick="ubah('Isya',1)">+</button><button onclick="ubah('Isya',-1)">-</button>
+</div>
+
+<script>
+
+// ===== CONFIG =====
+const TOTAL_GAMBAR = 165;
+const DURASI = 10000;
+
+// ===== TOGGLE PANEL =====
+document.addEventListener("keydown", function(e){
+  if(e.key.toLowerCase()==="s"){
+    let panel=document.querySelector(".setting");
+    panel.style.display = panel.style.display==="none" ? "block":"none";
+  }
+});
+
+// ===== BACKGROUND HALUS =====
+let images=[];
+for(let i=1;i<=TOTAL_GAMBAR;i++){
+  images.push(`images/bg (${i}).jpg`);
+}
+
+let index=0, aktif=true;
+
+function preload(src){
+  return new Promise(res=>{
+    let img=new Image();
+    img.src=src;
+    img.onload=res;
+    img.onerror=res;
+  });
+}
+
+async function gantiBG(){
+  let next = images[index];
+  await preload(next);
+
+  let bg1=document.getElementById("bg1");
+  let bg2=document.getElementById("bg2");
+
+  if(aktif){
+    bg2.style.backgroundImage=`url('${next}')`;
+    bg2.style.opacity=1;
+    bg1.style.opacity=0;
+  }else{
+    bg1.style.backgroundImage=`url('${next}')`;
+    bg1.style.opacity=1;
+    bg2.style.opacity=0;
+  }
+
+  aktif=!aktif;
+  index=(index+1)%images.length;
+}
+
+setInterval(gantiBG,DURASI);
+gantiBG();
+
+// ===== JAM =====
+function updateJam(){
+  let now=new Date();
+  document.getElementById("jam").innerText=
+    now.toLocaleTimeString('id-ID',{hour12:false});
+}
+setInterval(updateJam,1000);
+updateJam();
+
+// ===== TANGGAL =====
+async function loadTanggal(){
+  let now=new Date();
+
+  document.getElementById("tanggalMasehi").innerText=
+    now.toLocaleDateString('id-ID',{
+      weekday:'long',day:'numeric',month:'long',year:'numeric'
+    });
+
+  try{
+    let res=await fetch("https://api.aladhan.com/v1/gToH");
+    let data=await res.json();
+    let h=data.data.hijri;
+
+    let nama=h.month.en || "";
+    nama=nama.replace("Shawwal","Syawal").replace("Shawwāl","Syawal");
+
+    document.getElementById("tanggalHijriyah").innerText=
+      `${h.day} ${nama} ${h.year} H`;
+
+  }catch{
+    document.getElementById("tanggalHijriyah").innerText="Hijriyah offline";
+  }
+}
+
+loadTanggal();
+setInterval(loadTanggal,3600000);
+
+// ===== CUACA =====
+async function loadCuaca(){
+  try{
+    let res=await fetch("https://wttr.in/Medan?format=j1");
+    let data=await res.json();
+
+    document.getElementById("cuaca").innerText=
+      `🌡️ ${data.current_condition[0].temp_C}°C - ${data.current_condition[0].weatherDesc[0].value}`;
+  }catch{
+    document.getElementById("cuaca").innerText="Cuaca offline";
+  }
+}
+loadCuaca();
+setInterval(loadCuaca,600000);
+
+// ===== OFFSET =====
+let offset=JSON.parse(localStorage.getItem("offset")||'{}');
+
+function ubah(nama,val){
+  offset[nama]=(offset[nama]||0)+val;
+  localStorage.setItem("offset",JSON.stringify(offset));
+  loadJadwal();
+}
+
+// ===== JADWAL =====
+let jadwal={};
+
+function tambah(waktu, menit){
+  let [h,m]=waktu.split(":").map(Number);
+  m+=menit;
+  if(m>=60){h++;m-=60;}
+  if(m<0){h--;m+=60;}
+  return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
+}
+
+async function loadJadwal(){
+  try{
+    let res=await fetch("https://api.aladhan.com/v1/timings?latitude=3.595&longitude=98.672&method=20");
+    let data=await res.json();
+    let t=data.data.timings;
+
+    jadwal={
+      Subuh:tambah(t.Fajr,offset.Subuh??2),
+      Dzuhur:tambah(t.Dhuhr,offset.Dzuhur??3),
+      Ashar:tambah(t.Asr,offset.Ashar??2),
+      Maghrib:tambah(t.Maghrib,offset.Maghrib??3),
+      Isya:tambah(t.Isha,offset.Isya??2)
+    };
+
+    localStorage.setItem("jadwal_backup",JSON.stringify(jadwal));
+
+  }catch{
+    let backup=localStorage.getItem("jadwal_backup");
+    if(backup) jadwal=JSON.parse(backup);
+  }
+
+  for(let k in jadwal){
+    document.getElementById(k).innerText=`${k} - ${jadwal[k]}`;
+  }
+}
+
+loadJadwal();
+setInterval(loadJadwal,3600000);
+
+// ===== COUNTDOWN =====
+setInterval(()=>{
+  if(Object.keys(jadwal).length===0) return;
+
+  let now=new Date();
+  let current=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+
+  let next="",time=999999;
+
+  for(let k in jadwal){
+    let [h,m]=jadwal[k].split(":");
+    let t=h*3600+m*60;
+    if(t>current && t<time){time=t;next=k;}
+  }
+
+  if(!next){
+    let [h,m]=jadwal.Subuh.split(":");
+    time=h*3600+m*60+86400;
+    next="Subuh";
+  }
+
+  let d=time-current;
+  let j=Math.floor(d/3600);
+  let m=Math.floor((d%3600)/60);
+  let s=d%60;
+
+  document.getElementById("countdown").innerText=
+    `Menuju ${next}: ${j}j ${m}m ${s}d`;
+
+  for(let k in jadwal){
+    document.getElementById(k).classList.remove("active");
+  }
+  document.getElementById(next).classList.add("active");
+
+},1000);
+
+// ===== AUTO FULLSCREEN =====
+setTimeout(()=>{
+  document.documentElement.requestFullscreen().catch(()=>{});
+},2000);
+
+</script>
+
+</body>
+</html>
