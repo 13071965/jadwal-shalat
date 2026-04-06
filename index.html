@@ -5,6 +5,10 @@
 <title>Jadwal Shalat</title>
 
 <style>
+:root{
+  --scale: 1.5; /* 👉 ubah ini kalau mau lebih besar/kecil */
+}
+
 body {
   margin: 0;
   overflow: hidden;
@@ -37,32 +41,44 @@ body {
   position: absolute;
   width: 100%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scale(var(--scale));
   text-align: center;
 }
 
-h1 { font-size: 80px; margin: 0; }
-.small { font-size: 24px; }
+/* ================= FONT ================= */
+
+h1 { 
+  font-size: 90px; 
+  margin: 0;
+  font-weight: bold;
+}
+
+.small { 
+  font-size: 28px; 
+}
 
 .jadwal {
-  margin-top: 20px;
-  font-size: 22px;
-  line-height: 1.6;
+  margin-top: 25px;
+  font-size: 26px;
+  line-height: 1.8;
 }
 
 .active {
   color: #00ff88;
   font-weight: bold;
-  font-size: 24px;
+  font-size: 30px;
 }
 
 .green {
   color: #00ffaa;
-  margin-top: 10px;
-  font-size: 26px;
+  margin-top: 15px;
+  font-size: 32px;
+  font-weight: bold;
 }
 
-* { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
+* { 
+  text-shadow: 0 0 15px rgba(0,0,0,0.9); 
+}
 </style>
 </head>
 
@@ -101,16 +117,14 @@ document.getElementById("tanggal").innerText =
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
 
-// ================= HIJRI FIX =================
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
 
-  // ambil nama bulan langsung dari API (lebih aman)
   let bulan = h.month.en;
 
-  // ganti ke Indonesia
   bulan = bulan
     .replace("Shawwal","Syawal")
     .replace("Sha'ban","Syaban")
@@ -150,7 +164,7 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
   };
 });
 
-// ================= RENDER + HIGHLIGHT =================
+// ================= RENDER =================
 function renderJadwal(){
 
   if(Object.keys(jadwal).length===0) return;
@@ -192,7 +206,6 @@ function renderJadwal(){
   document.getElementById("jadwal").innerHTML = html;
 }
 
-// update tiap detik (biar responsif)
 setInterval(renderJadwal,1000);
 
 // ================= COUNTDOWN =================
