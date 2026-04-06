@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat TV</title>
+<title>Jadwal Shalat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -15,17 +15,15 @@ body{
  cursor:none;
 }
 
-/* 🔥 FULL LAYAR PAKSA */
+/* FULL */
 .wrapper{
  position:fixed;
- top:0;
- left:0;
  width:100vw;
  height:100vh;
  overflow:hidden;
 }
 
-/* BACKGROUND */
+/* BG */
 .bg{
  position:absolute;
  width:100%;
@@ -45,27 +43,31 @@ body{
  background:rgba(0,0,0,0.45);
 }
 
-/* 🔥 TURUNKAN AGAR TIDAK KE POTONG */
+/* 🔥 RESPONSIVE FIX */
 .content{
  position:absolute;
  width:100%;
- top:52%;
- transform:translateY(-50%);
+ top:50%;
+ left:50%;
+ transform:translate(-50%,-50%);
  text-align:center;
+
+ padding:3vh 5vw;
+ box-sizing:border-box;
 }
 
-/* 🔥 FONT DIKECILKAN SEDIKIT (ANTI POTONG TV) */
+/* 🔥 SIZE AMAN */
 h1{
- font-size:8vw;
- margin:0;
+ font-size:clamp(40px, 8vw, 120px);
+ margin:10px 0;
 }
 
 .small{
- font-size:2.5vw;
+ font-size:clamp(14px, 2.5vw, 28px);
 }
 
 .jadwal{
- font-size:2.3vw;
+ font-size:clamp(14px, 2.3vw, 26px);
  margin-top:15px;
  line-height:1.7;
 }
@@ -73,12 +75,11 @@ h1{
 .active{
  color:#00ff88;
  font-weight:bold;
- font-size:2.6vw;
 }
 
 .green{
  color:#00ffaa;
- font-size:2.6vw;
+ font-size:clamp(14px, 2.5vw, 28px);
  margin-top:10px;
 }
 
