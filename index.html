@@ -6,14 +6,10 @@
 <title>Jadwal Shalat TV</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
+*{margin:0;padding:0;box-sizing:border-box;}
 
 body{
-  font-family:Arial, sans-serif;
+  font-family:Arial;
   color:white;
   text-align:center;
   height:100vh;
@@ -28,59 +24,47 @@ body{
   height:100%;
   background-size:cover;
   background-position:center;
-  transition:opacity 2s ease-in-out;
+  transition:opacity 2s;
+  z-index:-2;
+}
+
+/* overlay biar teks jelas */
+.overlay{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.35);
   z-index:-1;
 }
 
-/* CONTAINER AMAN SEMUA DEVICE */
+/* CONTAINER */
 .container{
   width:100%;
   height:100vh;
-
   display:flex;
   flex-direction:column;
   justify-content:space-evenly;
   align-items:center;
-
-  padding:2vh 2vw;
+  padding:2vh;
 }
 
-/* FONT BERDASARKAN TINGGI (ANTI KEPOTONG) */
-h1{
-  font-size:7.5vh;
-  text-shadow:0 0 20px rgba(0,0,0,0.7);
-}
-
-.small{
-  font-size:2.2vh;
-}
-
-.green{
-  font-size:2.2vh;
-  color:#00ff88;
-}
-
-.jadwal{
-  font-size:2vh;
-  line-height:1.5;
-}
-
-.active{
-  color:#00ff88;
-  font-weight:bold;
-}
+/* FONT AMAN */
+h1{font-size:7vh;}
+.small{font-size:2.2vh;}
+.green{font-size:2.2vh;color:#00ff88;}
+.jadwal{font-size:2vh;line-height:1.5;}
+.active{color:#00ff88;font-weight:bold;}
 </style>
 </head>
 
 <body>
 
 <div id="bg1" class="bg"></div>
-<div id="bg2" class="bg" style="opacity:0;"></div>
+<div id="bg2" class="bg" style="opacity:0"></div>
+<div class="overlay"></div>
 
 <div class="container">
-
   <div class="small">JADWAL SHALAT</div>
-
   <h1 id="jam"></h1>
 
   <div class="small" id="tanggal"></div>
@@ -89,69 +73,65 @@ h1{
   <div class="small" id="cuaca"></div>
 
   <div class="green" id="countdown"></div>
-
   <div class="jadwal" id="jadwal"></div>
-
 </div>
 
 <script>
 
-/* FULLSCREEN (TERBAIK YANG BISA) */
+/* ================= */
+/* FULLSCREEN */
+/* ================= */
 function goFull(){
   let el=document.documentElement;
   if(el.requestFullscreen) el.requestFullscreen();
-  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 }
 document.addEventListener("click",goFull);
 document.addEventListener("touchstart",goFull);
 
 
+/* ================= */
 /* JAM */
-function updateJam(){
-  let now=new Date();
+/* ================= */
+setInterval(()=>{
   document.getElementById("jam").innerText=
-    now.toLocaleTimeString("id-ID");
-}
-setInterval(updateJam,1000);
+    new Date().toLocaleTimeString("id-ID");
+},1000);
 
 
+/* ================= */
 /* TANGGAL */
-function updateTanggal(){
-  let now=new Date();
-  document.getElementById("tanggal").innerText=
-    now.toLocaleDateString("id-ID",
-    {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-}
-updateTanggal();
+/* ================= */
+document.getElementById("tanggal").innerText=
+  new Date().toLocaleDateString("id-ID",
+  {weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 
+/* ================= */
 /* HIJRI */
-function updateHijri(){
-  try{
-    let now=new Date();
-    let hijri=new Intl.DateTimeFormat(
-      'id-TN-u-ca-islamic',
-      {day:'numeric',month:'long',year:'numeric'}
-    ).format(now);
-
-    document.getElementById("hijri").innerText = hijri + " H";
-  }catch{
-    document.getElementById("hijri").innerText = "";
-  }
-}
-updateHijri();
+/* ================= */
+try{
+  let h=new Intl.DateTimeFormat(
+    'id-TN-u-ca-islamic',
+    {day:'numeric',month:'long',year:'numeric'}
+  ).format(new Date());
+  document.getElementById("hijri").innerText=h+" H";
+}catch{}
 
 
+/* ================= */
 /* CUACA */
+/* ================= */
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.6&longitude=98.6&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
   document.getElementById("cuaca").innerText=
-    d.current_weather.temperature + "°C - Medan";
+    d.current_weather.temperature+"°C - Medan";
 });
 
 
+/* ================= */
 /* JADWAL */
+/* ================= */
 let jadwal={
   Subuh:"05:06",
   Dzuhur:"12:28",
@@ -160,7 +140,7 @@ let jadwal={
   Isya:"19:42"
 };
 
-function updateJadwal(){
+setInterval(()=>{
   let now=new Date();
   let nowSec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
 
@@ -198,12 +178,23 @@ function updateJadwal(){
     "Menuju "+nextName+": "+j+"j "+m+"m "+d+"d";
 
   document.getElementById("jadwal").innerHTML=html;
-}
-setInterval(updateJadwal,1000);
+
+},1000);
 
 
-/* BACKGROUND */
-let imgs=[
+/* ================= */
+/* BACKGROUND FIX */
+/* ================= */
+
+/* 🔥 fallback online (ANTI HITAM TOTAL) */
+let fallback=[
+ "https://picsum.photos/1920/1080?1",
+ "https://picsum.photos/1920/1080?2",
+ "https://picsum.photos/1920/1080?3"
+];
+
+/* 🔥 folder lokal (kalau ada) */
+let local=[
  "images/1.jpg",
  "images/2.jpg",
  "images/3.jpg",
@@ -211,26 +202,35 @@ let imgs=[
  "images/5.jpg"
 ];
 
+let imgs=[...local, ...fallback];
+
 let i=0;
 let bg1=document.getElementById("bg1");
 let bg2=document.getElementById("bg2");
 
+function setBg(el, url){
+  let img=new Image();
+  img.onload=()=> el.style.backgroundImage=`url(${url})`;
+  img.onerror=()=> el.style.backgroundImage=`url(${fallback[0]})`;
+  img.src=url;
+}
+
 function slide(){
   let next=(i+1)%imgs.length;
 
-  bg2.style.backgroundImage="url("+imgs[next]+")";
+  setBg(bg2, imgs[next]);
   bg2.style.opacity=1;
   bg1.style.opacity=0;
 
   setTimeout(()=>{
-    bg1.style.backgroundImage="url("+imgs[next]+")";
+    setBg(bg1, imgs[next]);
     bg1.style.opacity=1;
     bg2.style.opacity=0;
     i=next;
   },2000);
 }
 
-bg1.style.backgroundImage="url("+imgs[0]+")";
+setBg(bg1, imgs[0]);
 setInterval(slide,15000);
 
 </script>
