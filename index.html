@@ -15,7 +15,6 @@ body{
  cursor:none;
 }
 
-/* FULL */
 .wrapper{
  position:fixed;
  width:100vw;
@@ -23,14 +22,14 @@ body{
  overflow:hidden;
 }
 
-/* BG */
+/* BACKGROUND */
 .bg{
  position:absolute;
  width:100%;
  height:100%;
  background-size:cover;
  background-position:center;
- transition:opacity 2s;
+ transition:opacity 2s ease-in-out;
 }
 
 #bg1{z-index:-2;opacity:1;}
@@ -43,7 +42,7 @@ body{
  background:rgba(0,0,0,0.45);
 }
 
-/* 🔥 RESPONSIVE FIX */
+/* CONTENT */
 .content{
  position:absolute;
  width:100%;
@@ -51,36 +50,33 @@ body{
  left:50%;
  transform:translate(-50%,-50%);
  text-align:center;
-
- padding:3vh 5vw;
- box-sizing:border-box;
+ padding:2vh 3vw;
 }
 
-/* 🔥 SIZE AMAN */
+/* 🔥 BESAR LAGI (PAKAI VW) */
 h1{
- font-size:clamp(40px, 8vw, 120px);
+ font-size:10vw;
  margin:10px 0;
 }
 
 .small{
- font-size:clamp(14px, 2.5vw, 28px);
+ font-size:3vw;
 }
 
 .jadwal{
- font-size:clamp(14px, 2.3vw, 26px);
+ font-size:2.8vw;
  margin-top:15px;
  line-height:1.7;
+}
+
+.green{
+ font-size:3vw;
+ margin-top:10px;
 }
 
 .active{
  color:#00ff88;
  font-weight:bold;
-}
-
-.green{
- color:#00ffaa;
- font-size:clamp(14px, 2.5vw, 28px);
- margin-top:10px;
 }
 
 *{
@@ -106,9 +102,9 @@ h1{
 <div class="small" id="tanggal"></div>
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
-<div class="small" id="cuaca"></div>
+<div class="small" id="cuaca">Memuat suhu...</div>
 
-<div class="green" id="countdown"></div>
+<div class="green" id="countdown">Memuat...</div>
 
 <div class="jadwal" id="jadwalDiv"></div>
 
@@ -117,16 +113,16 @@ h1{
 
 <script>
 
-// JAM
+// ================= JAM =================
 setInterval(()=>{
  clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
-// TANGGAL
+// ================= TANGGAL =================
 tanggal.innerText=new Date().toLocaleDateString("id-ID",
 {weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-// HIJRI
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
@@ -135,14 +131,17 @@ fetch("https://api.aladhan.com/v1/gToH")
  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
-// CUACA
+// ================= CUACA =================
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
- cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
-});
+ cuaca.innerText = d.current_weather
+  ? `${d.current_weather.temperature}°C - Medan`
+  : "Medan";
+})
+.catch(()=>cuaca.innerText="Medan");
 
-// JADWAL
+// ================= JADWAL =================
 let dataJadwal=null;
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
@@ -161,7 +160,9 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
  startLoop();
 });
 
+// ================= LOOP =================
 function startLoop(){
+
  setInterval(()=>{
 
   let now=new Date();
@@ -227,7 +228,7 @@ function startLoop(){
  },1000);
 }
 
-// BACKGROUND
+// ================= BACKGROUND =================
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
