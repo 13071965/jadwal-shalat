@@ -2,236 +2,266 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<title>Jadwal Shalat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jadwal Shalat TV</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-
 body{
-  font-family:Arial;
-  color:white;
-  text-align:center;
-  height:100vh;
-  overflow:hidden;
-  background:black;
+ margin:0;
+ overflow:hidden;
+ font-family:Arial;
+ color:white;
+ background:black;
+ cursor:none;
 }
 
-/* BACKGROUND */
+/* FULL */
+.wrapper{
+ position:fixed;
+ width:100vw;
+ height:100vh;
+ overflow:hidden;
+}
+
+/* BG */
 .bg{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-size:cover;
-  background-position:center;
-  transition:opacity 2s;
-  z-index:-2;
+ position:absolute;
+ width:100%;
+ height:100%;
+ background-size:cover;
+ background-position:center;
+ transition:opacity 2s;
 }
 
-/* overlay biar teks jelas */
+#bg1{z-index:-2;opacity:1;}
+#bg2{z-index:-3;opacity:0;}
+
 .overlay{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.35);
-  z-index:-1;
+ position:absolute;
+ width:100%;
+ height:100%;
+ background:rgba(0,0,0,0.45);
 }
 
-/* CONTAINER */
-.container{
-  width:100%;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-evenly;
-  align-items:center;
-  padding:2vh;
+/* 🔥 RESPONSIVE FIX */
+.content{
+ position:absolute;
+ width:100%;
+ top:50%;
+ left:50%;
+ transform:translate(-50%,-50%);
+ text-align:center;
+
+ padding:3vh 5vw;
+ box-sizing:border-box;
 }
 
-/* FONT AMAN */
-h1{font-size:7vh;}
-.small{font-size:2.2vh;}
-.green{font-size:2.2vh;color:#00ff88;}
-.jadwal{font-size:2vh;line-height:1.5;}
-.active{color:#00ff88;font-weight:bold;}
+/* 🔥 SIZE AMAN */
+h1{
+ font-size:clamp(40px, 8vw, 120px);
+ margin:10px 0;
+}
+
+.small{
+ font-size:clamp(14px, 2.5vw, 28px);
+}
+
+.jadwal{
+ font-size:clamp(14px, 2.3vw, 26px);
+ margin-top:15px;
+ line-height:1.7;
+}
+
+.active{
+ color:#00ff88;
+ font-weight:bold;
+}
+
+.green{
+ color:#00ffaa;
+ font-size:clamp(14px, 2.5vw, 28px);
+ margin-top:10px;
+}
+
+*{
+ text-shadow:0 0 15px rgba(0,0,0,1);
+}
 </style>
 </head>
 
 <body>
 
+<div class="wrapper">
+
 <div id="bg1" class="bg"></div>
-<div id="bg2" class="bg" style="opacity:0"></div>
+<div id="bg2" class="bg"></div>
+
 <div class="overlay"></div>
 
-<div class="container">
-  <div class="small">JADWAL SHALAT</div>
-  <h1 id="jam"></h1>
+<div class="content">
 
-  <div class="small" id="tanggal"></div>
-  <div class="small" id="hijri"></div>
-  <div class="small">Cinta Damai, Medan Helvetia</div>
-  <div class="small" id="cuaca"></div>
+<div class="small">JADWAL SHALAT</div>
+<h1 id="clock"></h1>
 
-  <div class="green" id="countdown"></div>
-  <div class="jadwal" id="jadwal"></div>
+<div class="small" id="tanggal"></div>
+<div class="small" id="hijri"></div>
+<div class="small">Cinta Damai, Medan Helvetia</div>
+<div class="small" id="cuaca"></div>
+
+<div class="green" id="countdown"></div>
+
+<div class="jadwal" id="jadwalDiv"></div>
+
+</div>
 </div>
 
 <script>
 
-/* ================= */
-/* FULLSCREEN */
-/* ================= */
-function goFull(){
-  let el=document.documentElement;
-  if(el.requestFullscreen) el.requestFullscreen();
-}
-document.addEventListener("click",goFull);
-document.addEventListener("touchstart",goFull);
-
-
-/* ================= */
-/* JAM */
-/* ================= */
+// JAM
 setInterval(()=>{
-  document.getElementById("jam").innerText=
-    new Date().toLocaleTimeString("id-ID");
+ clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
+// TANGGAL
+tanggal.innerText=new Date().toLocaleDateString("id-ID",
+{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-/* ================= */
-/* TANGGAL */
-/* ================= */
-document.getElementById("tanggal").innerText=
-  new Date().toLocaleDateString("id-ID",
-  {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-
-/* ================= */
-/* HIJRI */
-/* ================= */
-try{
-  let h=new Intl.DateTimeFormat(
-    'id-TN-u-ca-islamic',
-    {day:'numeric',month:'long',year:'numeric'}
-  ).format(new Date());
-  document.getElementById("hijri").innerText=h+" H";
-}catch{}
-
-
-/* ================= */
-/* CUACA */
-/* ================= */
-fetch("https://api.open-meteo.com/v1/forecast?latitude=3.6&longitude=98.6&current_weather=true")
+// HIJRI
+fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
-  document.getElementById("cuaca").innerText=
-    d.current_weather.temperature+"°C - Medan";
+ let h=d.data.hijri;
+ let bulan=h.month.en.replace("Shawwal","Syawal");
+ hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
+// CUACA
+fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
+.then(r=>r.json())
+.then(d=>{
+ cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+});
 
-/* ================= */
-/* JADWAL */
-/* ================= */
-let jadwal={
-  Subuh:"05:06",
-  Dzuhur:"12:28",
-  Ashar:"15:35",
-  Maghrib:"18:33",
-  Isya:"19:42"
-};
+// JADWAL
+let dataJadwal=null;
 
-setInterval(()=>{
+fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
+.then(r=>r.json())
+.then(d=>{
+ let t=d.data.timings;
+
+ dataJadwal={
+  Subuh:t.Fajr,
+  Dzuhur:t.Dhuhr,
+  Ashar:t.Asr,
+  Maghrib:t.Maghrib,
+  Isya:t.Isha
+ };
+
+ startLoop();
+});
+
+function startLoop(){
+ setInterval(()=>{
+
   let now=new Date();
-  let nowSec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+  let nowMin=now.getHours()*60+now.getMinutes();
 
-  let nextName="";
-  let nextTime=0;
+  let active="";
+  let list=Object.entries(dataJadwal);
+
+  for(let i=0;i<list.length;i++){
+   let [n,t]=list[i];
+   let [h,m]=t.split(":").map(Number);
+   let cur=h*60+m;
+
+   let next=1440;
+   if(list[i+1]){
+    let [nh,nm]=list[i+1][1].split(":").map(Number);
+    next=nh*60+nm;
+   }
+
+   if(nowMin>=cur&&nowMin<next) active=n;
+  }
+
   let html="";
-
-  for(let k in jadwal){
-    let [h,m]=jadwal[k].split(":");
-    let sec=h*3600+m*60;
-
-    if(sec>nowSec && nextName===""){
-      nextName=k;
-      nextTime=sec;
-    }
-
-    html+=`<div class="${k===nextName?'active':''}">
-      ${k} - ${jadwal[k]}
-    </div>`;
+  for(let [n,t] of list){
+   html+= n===active
+    ? `<div class="active">${n} - ${t}</div>`
+    : `<div>${n} - ${t}</div>`;
   }
 
-  if(nextName===""){
-    nextName="Subuh";
-    nextTime=86400 + (5*3600+6*60);
+  jadwalDiv.innerHTML=html;
+
+  // COUNTDOWN
+  let nextName="", nextTime=null;
+
+  for(let [n,t] of list){
+   let [h,m]=t.split(":").map(Number);
+   let total=h*60+m;
+
+   if(total>nowMin){
+    nextName=n;
+    nextTime=new Date();
+    nextTime.setHours(h,m,0);
+    break;
+   }
   }
 
-  let sisa=nextTime-nowSec;
-  if(sisa<0) sisa+=86400;
+  if(!nextTime){
+   let [h,m]=dataJadwal.Subuh.split(":").map(Number);
+   nextTime=new Date();
+   nextTime.setDate(nextTime.getDate()+1);
+   nextTime.setHours(h,m,0);
+   nextName="Subuh";
+  }
 
-  let j=Math.floor(sisa/3600);
-  let m=Math.floor((sisa%3600)/60);
-  let d=sisa%60;
+  let diff=nextTime-now;
 
-  document.getElementById("countdown").innerText=
-    "Menuju "+nextName+": "+j+"j "+m+"m "+d+"d";
+  let h=Math.floor(diff/3600000);
+  let m=Math.floor((diff%3600000)/60000);
+  let s=Math.floor((diff%60000)/1000);
 
-  document.getElementById("jadwal").innerHTML=html;
+  countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 
-},1000);
+ },1000);
+}
 
+// BACKGROUND
+let images=[];
+for(let i=1;i<=165;i++){
+ images.push(`bg (${i}).jpg`);
+}
 
-/* ================= */
-/* BACKGROUND FIX */
-/* ================= */
-
-/* 🔥 fallback online (ANTI HITAM TOTAL) */
-let fallback=[
- "https://picsum.photos/1920/1080?1",
- "https://picsum.photos/1920/1080?2",
- "https://picsum.photos/1920/1080?3"
-];
-
-/* 🔥 folder lokal (kalau ada) */
-let local=[
- "images/1.jpg",
- "images/2.jpg",
- "images/3.jpg",
- "images/4.jpg",
- "images/5.jpg"
-];
-
-let imgs=[...local, ...fallback];
+images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 
 let i=0;
-let bg1=document.getElementById("bg1");
-let bg2=document.getElementById("bg2");
+let front=true;
 
-function setBg(el, url){
-  let img=new Image();
-  img.onload=()=> el.style.backgroundImage=`url(${url})`;
-  img.onerror=()=> el.style.backgroundImage=`url(${fallback[0]})`;
-  img.src=url;
-}
+bg1.style.backgroundImage=`url('${images[0]}')`;
 
-function slide(){
-  let next=(i+1)%imgs.length;
+function changeBG(){
+ let next=images[i];
+ let img=new Image();
+ img.src=next;
 
-  setBg(bg2, imgs[next]);
-  bg2.style.opacity=1;
-  bg1.style.opacity=0;
-
-  setTimeout(()=>{
-    setBg(bg1, imgs[next]);
+ img.onload=()=>{
+  if(front){
+    bg2.style.backgroundImage=`url('${next}')`;
+    bg2.style.opacity=1;
+    setTimeout(()=>bg1.style.opacity=0,50);
+  }else{
+    bg1.style.backgroundImage=`url('${next}')`;
     bg1.style.opacity=1;
-    bg2.style.opacity=0;
-    i=next;
-  },2000);
+    setTimeout(()=>bg2.style.opacity=0,50);
+  }
+
+  front=!front;
+  i=(i+1)%images.length;
+ };
 }
 
-setBg(bg1, imgs[0]);
-setInterval(slide,15000);
+setInterval(changeBG,15000);
 
 </script>
 
