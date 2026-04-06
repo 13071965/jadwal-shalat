@@ -89,6 +89,11 @@ h1 { font-size: 80px; margin: 0; }
 
 <script>
 
+// ================= ANTI SCREENSAVER =================
+setInterval(()=>{
+  window.dispatchEvent(new Event('mousemove'));
+},20000);
+
 // ================= JAM =================
 setInterval(()=>{
   document.getElementById("clock").innerText =
@@ -101,16 +106,13 @@ document.getElementById("tanggal").innerText =
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
 
-// ================= HIJRI FIX =================
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
 
-  // ambil nama bulan langsung dari API (lebih aman)
   let bulan = h.month.en;
-
-  // ganti ke Indonesia
   bulan = bulan
     .replace("Shawwal","Syawal")
     .replace("Sha'ban","Syaban")
@@ -133,10 +135,10 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&
   document.getElementById("cuaca").innerText = "Medan";
 });
 
-// ================= JADWAL =================
+// ================= JADWAL (KEMENAG / MUSLIM PRO) =================
 let jadwal = {};
 
-fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
+fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia&method=11")
 .then(r=>r.json())
 .then(d=>{
   const t = d.data.timings;
@@ -150,7 +152,7 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
   };
 });
 
-// ================= RENDER + HIGHLIGHT =================
+// ================= RENDER =================
 function renderJadwal(){
 
   if(Object.keys(jadwal).length===0) return;
@@ -192,7 +194,6 @@ function renderJadwal(){
   document.getElementById("jadwal").innerHTML = html;
 }
 
-// update tiap detik (biar responsif)
 setInterval(renderJadwal,1000);
 
 // ================= COUNTDOWN =================
