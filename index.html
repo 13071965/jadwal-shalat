@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat Display</title>
+<title>Jadwal Shalat TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -15,14 +15,17 @@ body{
  cursor:none;
 }
 
-/* 🔥 FIX TV (tidak terlalu naik) */
+/* 🔥 FULL LAYAR PAKSA */
 .wrapper{
  position:fixed;
- top:-40px;
- width:100%;
- height:calc(100% + 40px);
+ top:0;
+ left:0;
+ width:100vw;
+ height:100vh;
+ overflow:hidden;
 }
 
+/* BACKGROUND */
 .bg{
  position:absolute;
  width:100%;
@@ -42,46 +45,45 @@ body{
  background:rgba(0,0,0,0.45);
 }
 
+/* 🔥 TURUNKAN AGAR TIDAK KE POTONG */
 .content{
  position:absolute;
  width:100%;
- top:50%;
+ top:52%;
  transform:translateY(-50%);
  text-align:center;
-
- /* 🔥 ANTI KEPOTONG */
- padding-top:40px;
 }
 
+/* 🔥 FONT DIKECILKAN SEDIKIT (ANTI POTONG TV) */
 h1{
- font-size:10vw;
+ font-size:8vw;
  margin:0;
 }
 
 .small{
- font-size:3vw;
+ font-size:2.5vw;
 }
 
 .jadwal{
- font-size:2.8vw;
- margin-top:20px;
- line-height:1.8;
+ font-size:2.3vw;
+ margin-top:15px;
+ line-height:1.7;
 }
 
 .active{
  color:#00ff88;
  font-weight:bold;
- font-size:3vw;
+ font-size:2.6vw;
 }
 
 .green{
  color:#00ffaa;
- font-size:3vw;
+ font-size:2.6vw;
  margin-top:10px;
 }
 
 *{
- text-shadow:0 0 20px rgba(0,0,0,1);
+ text-shadow:0 0 15px rgba(0,0,0,1);
 }
 </style>
 </head>
@@ -96,44 +98,34 @@ h1{
 <div class="overlay"></div>
 
 <div class="content">
+
 <div class="small">JADWAL SHALAT</div>
 <h1 id="clock"></h1>
 
 <div class="small" id="tanggal"></div>
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
-<div class="small" id="cuaca">Memuat suhu...</div>
+<div class="small" id="cuaca"></div>
 
-<div class="green" id="countdown">Memuat...</div>
+<div class="green" id="countdown"></div>
 
-<div class="jadwal" id="jadwalDiv">Memuat jadwal...</div>
+<div class="jadwal" id="jadwalDiv"></div>
+
 </div>
-
 </div>
 
 <script>
 
-// ================= FULLSCREEN (HP & LAPTOP) =================
-function goFull(){
- let el=document.documentElement;
- if(el.requestFullscreen){
-  el.requestFullscreen().catch(()=>{});
- }
-}
-
-document.addEventListener("click", goFull);
-document.addEventListener("touchstart", goFull);
-
-// ================= JAM =================
+// JAM
 setInterval(()=>{
  clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
-// ================= TANGGAL =================
+// TANGGAL
 tanggal.innerText=new Date().toLocaleDateString("id-ID",
 {weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-// ================= HIJRI =================
+// HIJRI
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
@@ -142,17 +134,14 @@ fetch("https://api.aladhan.com/v1/gToH")
  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
-// ================= CUACA =================
+// CUACA
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
- cuaca.innerText = d.current_weather
-  ? `${d.current_weather.temperature}°C - Medan`
-  : "Medan";
-})
-.catch(()=>cuaca.innerText="Medan");
+ cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+});
 
-// ================= JADWAL =================
+// JADWAL
 let dataJadwal=null;
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
@@ -171,9 +160,7 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
  startLoop();
 });
 
-// ================= LOOP UTAMA =================
 function startLoop(){
-
  setInterval(()=>{
 
   let now=new Date();
@@ -205,7 +192,7 @@ function startLoop(){
 
   jadwalDiv.innerHTML=html;
 
-  // ================= COUNTDOWN =================
+  // COUNTDOWN
   let nextName="", nextTime=null;
 
   for(let [n,t] of list){
@@ -239,7 +226,7 @@ function startLoop(){
  },1000);
 }
 
-// ================= BACKGROUND =================
+// BACKGROUND
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
@@ -250,7 +237,6 @@ images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 let i=0;
 let front=true;
 
-// gambar awal
 bg1.style.backgroundImage=`url('${images[0]}')`;
 
 function changeBG(){
