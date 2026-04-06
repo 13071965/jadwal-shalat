@@ -2,14 +2,21 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+
+<!-- ANTI CACHE -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
 <title>Jadwal Shalat</title>
 
 <style>
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   color: white;
   overflow: hidden;
+  background: black;
 }
 
 .bg {
@@ -18,7 +25,8 @@ body {
   height:100%;
   background-size:cover;
   background-position:center;
-  z-index:-1;
+  z-index:-2;
+  transition: opacity 2s;
 }
 
 .overlay {
@@ -37,30 +45,35 @@ body {
 }
 
 .clock {
-  font-size:100px;
+  font-size:110px;
   font-weight:bold;
 }
 
 .info {
-  font-size:22px;
-  margin-top:5px;
+  font-size:28px;
 }
 
 .jadwal {
   margin-top:20px;
-  font-size:24px;
+  font-size:30px;
   line-height:1.8;
 }
 
 .active {
-  color:#00eaff;
+  color:#00ffaa;
   font-weight:bold;
 }
 
+.countdown {
+  margin-top:20px;
+  font-size:32px;
+  color:#00eaff;
+}
+
 .progress {
-  width:300px;
-  height:6px;
-  background:#555;
+  width:400px;
+  height:8px;
+  background:#444;
   margin:20px auto;
   border-radius:5px;
   overflow:hidden;
@@ -71,44 +84,70 @@ body {
   width:0%;
   background:#00ffaa;
 }
+
+* { text-shadow:0 0 15px rgba(0,0,0,0.9); }
 </style>
 </head>
 
 <body>
 
-<div id="bg" class="bg"></div>
+<div id="bg1" class="bg"></div>
+<div id="bg2" class="bg"></div>
 <div class="overlay"></div>
 
 <div class="container">
   <div class="clock" id="clock"></div>
-  <div class="info" id="info"></div>
+  <div class="info" id="tanggal"></div>
+  <div class="info" id="hijri"></div>
+  <div class="info">Cinta Damai, Medan Helvetia</div>
+  <div class="info" id="cuaca"></div>
+
+  <div class="countdown" id="countdown"></div>
+  <div class="progress"><div id="bar" class="bar"></div></div>
 
   <div class="jadwal" id="jadwal"></div>
-
-  <div class="info" id="countdown"></div>
-  <div class="progress"><div id="bar" class="bar"></div></div>
 </div>
 
 <script>
 
 // ===== JAM =====
-setInterval(()=>{
-  clock.innerText=new Date().toLocaleTimeString("id-ID");
-},1000);
+function updateJam(){
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString("id-ID");
+}
+setInterval(updateJam,1000);
+updateJam();
 
-// ===== INFO =====
-setInterval(()=>{
-  const d=new Date();
-  info.innerText=d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-},60000);
+// ===== TANGGAL =====
+tanggal.innerText =
+  new Date().toLocaleDateString("id-ID", {
+    weekday:"long", day:"numeric", month:"long", year:"numeric"
+  });
 
-// ===== JADWAL API =====
+// ===== HIJRI =====
+fetch("https://api.aladhan.com/v1/gToH")
+.then(r=>r.json())
+.then(d=>{
+  const h=d.data.hijri;
+  hijri.innerText=`${h.day} ${h.month.en} ${h.year} H`;
+});
+
+// ===== CUACA =====
+fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
+.then(r=>r.json())
+.then(d=>{
+  cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+});
+
+// ===== JADWAL (FIX MUSLIM PRO) =====
 let jadwal={};
 
+function loadJadwal(){
 fetch("https://api.aladhan.com/v1/timings?latitude=3.5952&longitude=98.6722&method=11&school=0")
 .then(r=>r.json())
 .then(d=>{
   const t=d.data.timings;
+
   jadwal={
     Subuh:t.Fajr,
     Dzuhur:t.Dhuhr,
@@ -117,6 +156,9 @@ fetch("https://api.aladhan.com/v1/timings?latitude=3.5952&longitude=98.6722&meth
     Isya:t.Isha
   };
 });
+}
+loadJadwal();
+setInterval(loadJadwal,3600000);
 
 // ===== RENDER =====
 function render(){
@@ -126,8 +168,8 @@ function render(){
   const nowMin=now.getHours()*60+now.getMinutes();
 
   let html="";
-  let nextTime=null;
-  let prevTime=null;
+  let next=null;
+  let prev=null;
 
   const list=Object.entries(jadwal);
 
@@ -136,60 +178,72 @@ function render(){
     const [h,m]=t.split(":").map(Number);
     const total=h*60+m;
 
-    if(total>nowMin && !nextTime){
-      nextTime={n,t,total};
-      prevTime=list[i-1];
+    if(total>nowMin && !next){
+      next={n,t,total};
+      prev=list[i-1];
     }
 
-    html+=`<div>${n} ${t}</div>`;
+    html+=`<div>${n} - ${t}</div>`;
   }
 
-  jadwalEl.innerHTML=html;
+  document.getElementById("jadwal").innerHTML=html;
 
-  // countdown
-  if(nextTime){
+  if(next){
     const target=new Date();
-    const [h,m]=nextTime.t.split(":");
+    const [h,m]=next.t.split(":");
     target.setHours(h,m,0);
 
     const diff=target-now;
-    const s=Math.floor(diff/1000)%60;
-    const mnt=Math.floor(diff/60000)%60;
-    const hr=Math.floor(diff/3600000);
 
-    countdown.innerText=`${nextTime.n} dalam ${hr}j ${mnt}m ${s}d`;
+    const h1=Math.floor(diff/3600000);
+    const m1=Math.floor(diff%3600000/60000);
+    const s1=Math.floor(diff%60000/1000);
 
-    // progress bar
-    if(prevTime){
-      const [ph,pm]=prevTime[1].split(":").map(Number);
+    countdown.innerText=`Menuju ${next.n}: ${h1}j ${m1}m ${s1}d`;
+
+    // progress
+    if(prev){
+      const [ph,pm]=prev[1].split(":").map(Number);
       const prevMin=ph*60+pm;
 
-      const totalRange=nextTime.total-prevMin;
-      const currentRange=nowMin-prevMin;
+      const range=next.total-prevMin;
+      const cur=nowMin-prevMin;
 
-      let percent=(currentRange/totalRange)*100;
-      if(percent<0) percent=0;
-      if(percent>100) percent=100;
+      let p=(cur/range)*100;
+      if(p<0)p=0;
+      if(p>100)p=100;
 
-      bar.style.width=percent+"%";
+      bar.style.width=p+"%";
     }
   }
-
 }
-
 setInterval(render,1000);
 
-// ===== BACKGROUND SLIDESHOW =====
+// ===== BACKGROUND =====
 let imgs=[];
 for(let i=1;i<=165;i++) imgs.push(`bg (${i}).jpg`);
 
-let i=0;
-setInterval(()=>{
-  bg.style.backgroundImage=`url('${imgs[i]}')`;
-  i=(i+1)%imgs.length;
-},15000);
+let i=0,show=true;
 
-bg.style.backgroundImage=`url('${imgs[0]}')`;
+function bg(){
+  const b1=document.getElementById("bg1");
+  const b2=document.getElementById("bg2");
+
+  if(show){
+    b2.style.backgroundImage=`url('${imgs[i]}')`;
+    b2.style.opacity=1;
+    b1.style.opacity=0;
+  }else{
+    b1.style.backgroundImage=`url('${imgs[i]}')`;
+    b1.style.opacity=1;
+    b2.style.opacity=0;
+  }
+
+  show=!show;
+  i=(i+1)%imgs.length;
+}
+bg();
+setInterval(bg,15000);
 
 </script>
 
