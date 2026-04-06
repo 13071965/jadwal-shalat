@@ -14,29 +14,32 @@ body{
   text-align:center;
   height:100vh;
   overflow:hidden;
-  background:black;
+
+  /* 🔥 fallback warna kalau gambar gagal */
+  background:#111;
 }
 
-/* BACKGROUND */
+/* BACKGROUND SIMPLE (NO SLIDESHOW) */
 .bg{
   position:fixed;
   width:100%;
   height:100%;
+  background-image:url("https://picsum.photos/1920/1080");
   background-size:cover;
   background-position:center;
-  transition:opacity 2s;
   z-index:-2;
 }
 
+/* overlay */
 .overlay{
   position:fixed;
   width:100%;
   height:100%;
-  background:rgba(0,0,0,0.4);
+  background:rgba(0,0,0,0.5);
   z-index:-1;
 }
 
-/* CONTAINER (TANPA SCALE) */
+/* CONTAINER */
 .container{
   height:100vh;
 
@@ -49,22 +52,22 @@ body{
   padding:20px;
 }
 
-/* FONT RESPONSIVE (AMAN TV) */
+/* FONT */
 h1{
-  font-size:min(9vw, 80px);
+  font-size:min(10vw, 90px);
 }
 
 .small{
-  font-size:min(2.8vw, 22px);
+  font-size:min(3vw, 24px);
 }
 
 .green{
-  font-size:min(3vw, 24px);
+  font-size:min(3.2vw, 26px);
   color:#00ff88;
 }
 
 .jadwal{
-  font-size:min(2.8vw, 22px);
+  font-size:min(3vw, 24px);
   line-height:1.5;
 }
 
@@ -77,8 +80,7 @@ h1{
 
 <body>
 
-<div id="bg1" class="bg"></div>
-<div id="bg2" class="bg" style="opacity:0"></div>
+<div class="bg"></div>
 <div class="overlay"></div>
 
 <div class="container">
@@ -177,36 +179,6 @@ setInterval(()=>{
   document.getElementById("jadwal").innerHTML=html;
 
 },1000);
-
-/* BACKGROUND */
-let imgs=[
- "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
- "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
- "https://images.unsplash.com/photo-1470770841072-f978cf4d019e"
-];
-
-let i=0;
-let bg1=document.getElementById("bg1");
-let bg2=document.getElementById("bg2");
-
-bg1.style.backgroundImage=`url(${imgs[0]})`;
-
-function slide(){
-  let next=(i+1)%imgs.length;
-
-  bg2.style.backgroundImage=`url(${imgs[next]})`;
-  bg2.style.opacity=1;
-  bg1.style.opacity=0;
-
-  setTimeout(()=>{
-    bg1.style.backgroundImage=`url(${imgs[next]})`;
-    bg1.style.opacity=1;
-    bg2.style.opacity=0;
-    i=next;
-  },2000);
-}
-
-setInterval(slide,15000);
 
 </script>
 
