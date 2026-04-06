@@ -41,6 +41,7 @@ body {
   text-align: center;
 }
 
+/* FONT */
 h1 { font-size: 80px; margin: 0; }
 .small { font-size: 24px; }
 
@@ -135,10 +136,10 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&
   document.getElementById("cuaca").innerText = "Medan";
 });
 
-// ================= JADWAL (KEMENAG / MUSLIM PRO) =================
+// ================= JADWAL (PALING DEKAT MUSLIM PRO) =================
 let jadwal = {};
 
-fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia&method=11")
+fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia&method=11&school=1")
 .then(r=>r.json())
 .then(d=>{
   const t = d.data.timings;
