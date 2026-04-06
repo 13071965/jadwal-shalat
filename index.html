@@ -1,162 +1,107 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jadwal Shalat</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-
 body{
-  font-family:Arial, sans-serif;
+  margin:0;
+  font-family:Arial;
   color:white;
   text-align:center;
-  height:100vh;
-  overflow:hidden;
   background:#111;
 }
 
-/* BACKGROUND */
 .bg{
   position:fixed;
   width:100%;
   height:100%;
-  background-image:url("https://picsum.photos/1280/720");
-  background-size:cover;
-  background-position:center;
-  z-index:-2;
-}
-
-.overlay{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
+  background:url("https://picsum.photos/1280/720") center/cover no-repeat;
   z-index:-1;
 }
 
-/* CONTAINER PADAT */
 .container{
   height:100vh;
-
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-
-  gap:6px;
-  padding:10px;
 }
 
-/* FONT DIKECILKAN SEDIKIT */
-h1{
-  font-size:min(8vw, 70px);
-}
-
-.small{
-  font-size:min(2.5vw, 20px);
-}
-
-.green{
-  font-size:min(2.6vw, 22px);
-  color:#00ff88;
-}
-
-/* 🔥 jadwal dipastikan muat */
-.jadwal{
-  font-size:min(2.4vw, 20px);
-  line-height:1.3;
-}
-
-.active{
-  color:#00ff88;
-  font-weight:bold;
-}
+h1{font-size:60px;margin:10px;}
+.small{font-size:20px;}
+.green{color:#00ff88;font-size:22px;margin:10px;}
 </style>
 </head>
 
 <body>
 
 <div class="bg"></div>
-<div class="overlay"></div>
 
 <div class="container">
 
-  <div class="small">JADWAL SHALAT</div>
+<div class="small">JADWAL SHALAT</div>
+<h1 id="jam">--:--:--</h1>
 
-  <h1 id="jam"></h1>
+<div class="small" id="tanggal"></div>
+<div class="small">Cinta Damai, Medan Helvetia</div>
+<div class="small">Medan</div>
 
-  <div class="small" id="tanggal"></div>
-  <div class="small" id="hijri"></div>
-  <div class="small">Cinta Damai, Medan Helvetia</div>
-  <div class="small" id="cuaca"></div>
+<div class="green" id="countdown"></div>
 
-  <div class="green" id="countdown"></div>
-
-  <div class="jadwal" id="jadwal"></div>
+<div id="jadwal"></div>
 
 </div>
 
 <script>
 
-/* JAM */
-setInterval(()=>{
-  document.getElementById("jam").innerText=
-    new Date().toLocaleTimeString("id-ID");
-},1000);
+/* JAM SIMPLE */
+function updateJam(){
+  var now=new Date();
 
-/* TANGGAL */
-document.getElementById("tanggal").innerText=
-  new Date().toLocaleDateString("id-ID",
-  {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var h=now.getHours().toString().padStart(2,'0');
+  var m=now.getMinutes().toString().padStart(2,'0');
+  var s=now.getSeconds().toString().padStart(2,'0');
 
-/* HIJRI */
-try{
-  let h=new Intl.DateTimeFormat(
-    'id-TN-u-ca-islamic',
-    {day:'numeric',month:'long',year:'numeric'}
-  ).format(new Date());
-  document.getElementById("hijri").innerText=h+" H";
-}catch{}
+  document.getElementById("jam").innerHTML=h+"."+m+"."+s;
 
-/* CUACA */
-fetch("https://api.open-meteo.com/v1/forecast?latitude=3.6&longitude=98.6&current_weather=true")
-.then(r=>r.json())
-.then(d=>{
-  document.getElementById("cuaca").innerText=
-    d.current_weather.temperature+"°C - Medan";
-});
+  document.getElementById("tanggal").innerHTML=
+    now.toDateString();
+}
+
+setInterval(updateJam,1000);
+
 
 /* JADWAL */
-let jadwal={
-  Subuh:"05:06",
-  Dzuhur:"12:28",
-  Ashar:"15:35",
-  Maghrib:"18:33",
-  Isya:"19:42"
+var jadwal={
+  "Subuh":"05:06",
+  "Dzuhur":"12:28",
+  "Ashar":"15:35",
+  "Maghrib":"18:33",
+  "Isya":"19:42"
 };
 
-setInterval(()=>{
-  let now=new Date();
-  let nowSec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+function updateJadwal(){
 
-  let nextName="";
-  let nextTime=0;
-  let html="";
+  var now=new Date();
+  var nowSec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
 
-  for(let k in jadwal){
-    let [h,m]=jadwal[k].split(":");
-    let sec=h*3600+m*60;
+  var nextName="";
+  var nextTime=0;
+  var html="";
+
+  for(var k in jadwal){
+
+    var t=jadwal[k].split(":");
+    var sec=parseInt(t[0])*3600+parseInt(t[1])*60;
 
     if(sec>nowSec && nextName===""){
       nextName=k;
       nextTime=sec;
     }
 
-    html+=`<div class="${k===nextName?'active':''}">
-      ${k} - ${jadwal[k]}
-    </div>`;
+    html+="<div>"+k+" - "+jadwal[k]+"</div>";
   }
 
   if(nextName===""){
@@ -164,19 +109,19 @@ setInterval(()=>{
     nextTime=86400 + (5*3600+6*60);
   }
 
-  let sisa=nextTime-nowSec;
+  var sisa=nextTime-nowSec;
   if(sisa<0) sisa+=86400;
 
-  let j=Math.floor(sisa/3600);
-  let m=Math.floor((sisa%3600)/60);
-  let d=sisa%60;
+  var j=Math.floor(sisa/3600);
+  var m=Math.floor((sisa%3600)/60);
 
-  document.getElementById("countdown").innerText=
-    "Menuju "+nextName+": "+j+"j "+m+"m "+d+"d";
+  document.getElementById("countdown").innerHTML=
+    "Menuju "+nextName+": "+j+"j "+m+"m";
 
   document.getElementById("jadwal").innerHTML=html;
+}
 
-},1000);
+setInterval(updateJadwal,1000);
 
 </script>
 
