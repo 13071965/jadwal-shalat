@@ -2,90 +2,66 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-
-<!-- ANTI CACHE -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-
 <title>Jadwal Shalat</title>
 
 <style>
 body {
   margin: 0;
+  overflow: hidden;
   font-family: Arial, sans-serif;
   color: white;
-  overflow: hidden;
   background: black;
 }
 
 .bg {
   position: fixed;
-  width:100%;
-  height:100%;
-  background-size:cover;
-  background-position:center;
-  z-index:-2;
-  transition: opacity 2s;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 2s ease-in-out;
+  opacity: 0;
 }
+
+#bg1 { z-index: -2; }
+#bg2 { z-index: -3; }
 
 .overlay {
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.4);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.35);
 }
 
-.container {
-  text-align:center;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
+.content {
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
 }
 
-.clock {
-  font-size:110px;
-  font-weight:bold;
-}
-
-.info {
-  font-size:28px;
-}
+h1 { font-size: 90px; margin: 0; }
+.small { font-size: 28px; }
 
 .jadwal {
-  margin-top:20px;
-  font-size:30px;
-  line-height:1.8;
+  margin-top: 25px;
+  font-size: 26px;
+  line-height: 1.8;
 }
 
 .active {
-  color:#00ffaa;
-  font-weight:bold;
+  color: #00ff88;
+  font-weight: bold;
 }
 
-.countdown {
-  margin-top:20px;
-  font-size:32px;
-  color:#00eaff;
+.green {
+  color: #00ffaa;
+  margin-top: 15px;
+  font-size: 28px;
 }
 
-.progress {
-  width:400px;
-  height:8px;
-  background:#444;
-  margin:20px auto;
-  border-radius:5px;
-  overflow:hidden;
-}
-
-.bar {
-  height:100%;
-  width:0%;
-  background:#00ffaa;
-}
-
-* { text-shadow:0 0 15px rgba(0,0,0,0.9); }
+* { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
 </style>
 </head>
 
@@ -95,31 +71,29 @@ body {
 <div id="bg2" class="bg"></div>
 <div class="overlay"></div>
 
-<div class="container">
-  <div class="clock" id="clock"></div>
-  <div class="info" id="tanggal"></div>
-  <div class="info" id="hijri"></div>
-  <div class="info">Cinta Damai, Medan Helvetia</div>
-  <div class="info" id="cuaca"></div>
+<div class="content">
+  <div class="small">JADWAL SHALAT</div>
+  <h1 id="clock"></h1>
 
-  <div class="countdown" id="countdown"></div>
-  <div class="progress"><div id="bar" class="bar"></div></div>
+  <div class="small" id="tanggal"></div>
+  <div class="small" id="hijri"></div>
+  <div class="small">Cinta Damai, Medan Helvetia</div>
+  <div class="small" id="cuaca"></div>
 
+  <div class="green" id="countdown"></div>
   <div class="jadwal" id="jadwal"></div>
 </div>
 
 <script>
 
 // ===== JAM =====
-function updateJam(){
+setInterval(()=>{
   document.getElementById("clock").innerText =
     new Date().toLocaleTimeString("id-ID");
-}
-setInterval(updateJam,1000);
-updateJam();
+},1000);
 
 // ===== TANGGAL =====
-tanggal.innerText =
+document.getElementById("tanggal").innerText =
   new Date().toLocaleDateString("id-ID", {
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
@@ -128,122 +102,150 @@ tanggal.innerText =
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
-  const h=d.data.hijri;
-  hijri.innerText=`${h.day} ${h.month.en} ${h.year} H`;
+  const h = d.data.hijri;
+  document.getElementById("hijri").innerText =
+    `${h.day} ${h.month.en} ${h.year} H`;
 });
 
 // ===== CUACA =====
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
-  cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+  document.getElementById("cuaca").innerText =
+    `${d.current_weather.temperature}°C - Medan`;
 });
 
 // ===== JADWAL (FIX MUSLIM PRO) =====
-let jadwal={};
+let jadwal = {};
 
-function loadJadwal(){
 fetch("https://api.aladhan.com/v1/timings?latitude=3.5952&longitude=98.6722&method=11&school=0")
 .then(r=>r.json())
 .then(d=>{
-  const t=d.data.timings;
+  const t = d.data.timings;
 
-  jadwal={
-    Subuh:t.Fajr,
-    Dzuhur:t.Dhuhr,
-    Ashar:t.Asr,
-    Maghrib:t.Maghrib,
-    Isya:t.Isha
+  jadwal = {
+    Subuh: t.Fajr,
+    Dzuhur: t.Dhuhr,
+    Ashar: t.Asr,
+    Maghrib: t.Maghrib,
+    Isya: t.Isha
   };
 });
-}
-loadJadwal();
-setInterval(loadJadwal,3600000);
 
-// ===== RENDER =====
-function render(){
-  if(!Object.keys(jadwal).length) return;
+// ===== RENDER + HIGHLIGHT =====
+function renderJadwal(){
 
-  const now=new Date();
-  const nowMin=now.getHours()*60+now.getMinutes();
+  if(Object.keys(jadwal).length===0) return;
 
-  let html="";
-  let next=null;
-  let prev=null;
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
 
-  const list=Object.entries(jadwal);
+  let active = "";
+
+  const list = Object.entries(jadwal);
 
   for(let i=0;i<list.length;i++){
-    const [n,t]=list[i];
+    const [name,time] = list[i];
+    const [h,m] = time.split(":").map(Number);
+    const tMin = h*60 + m;
+
+    let nextMin = 1440;
+
+    if(list[i+1]){
+      const [nh,nm] = list[i+1][1].split(":").map(Number);
+      nextMin = nh*60 + nm;
+    }
+
+    if(nowMin >= tMin && nowMin < nextMin){
+      active = name;
+    }
+  }
+
+  let html = "";
+
+  for(const [name,time] of Object.entries(jadwal)){
+    if(name === active){
+      html += `<div class="active">${name} - ${time}</div>`;
+    } else {
+      html += `<div>${name} - ${time}</div>`;
+    }
+  }
+
+  document.getElementById("jadwal").innerHTML = html;
+}
+
+setInterval(renderJadwal,1000);
+
+// ===== COUNTDOWN =====
+setInterval(()=>{
+  if(Object.keys(jadwal).length===0) return;
+
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  let nextName="";
+  let nextTime=null;
+
+  for(const [n,t] of Object.entries(jadwal)){
     const [h,m]=t.split(":").map(Number);
     const total=h*60+m;
 
-    if(total>nowMin && !next){
-      next={n,t,total};
-      prev=list[i-1];
-    }
-
-    html+=`<div>${n} - ${t}</div>`;
-  }
-
-  document.getElementById("jadwal").innerHTML=html;
-
-  if(next){
-    const target=new Date();
-    const [h,m]=next.t.split(":");
-    target.setHours(h,m,0);
-
-    const diff=target-now;
-
-    const h1=Math.floor(diff/3600000);
-    const m1=Math.floor(diff%3600000/60000);
-    const s1=Math.floor(diff%60000/1000);
-
-    countdown.innerText=`Menuju ${next.n}: ${h1}j ${m1}m ${s1}d`;
-
-    // progress
-    if(prev){
-      const [ph,pm]=prev[1].split(":").map(Number);
-      const prevMin=ph*60+pm;
-
-      const range=next.total-prevMin;
-      const cur=nowMin-prevMin;
-
-      let p=(cur/range)*100;
-      if(p<0)p=0;
-      if(p>100)p=100;
-
-      bar.style.width=p+"%";
+    if(total>nowMin){
+      nextName=n;
+      nextTime=new Date();
+      nextTime.setHours(h,m,0);
+      break;
     }
   }
-}
-setInterval(render,1000);
+
+  if(!nextTime){
+    const [h,m]=jadwal.Subuh.split(":").map(Number);
+    nextTime=new Date();
+    nextTime.setDate(nextTime.getDate()+1);
+    nextTime.setHours(h,m,0);
+    nextName="Subuh";
+  }
+
+  const diff=nextTime-now;
+
+  const h=Math.floor(diff/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+
+  document.getElementById("countdown").innerText =
+    `Menuju ${nextName}: ${h}j ${m}m ${s}d`;
+
+},1000);
 
 // ===== BACKGROUND =====
-let imgs=[];
-for(let i=1;i<=165;i++) imgs.push(`bg (${i}).jpg`);
+let images=[];
+for(let i=1;i<=165;i++){
+  images.push(`bg (${i}).jpg`);
+}
 
-let i=0,show=true;
+let i=0;
+let show=true;
 
-function bg(){
-  const b1=document.getElementById("bg1");
-  const b2=document.getElementById("bg2");
+function gantiBG(){
+  const bg1=document.getElementById("bg1");
+  const bg2=document.getElementById("bg2");
 
   if(show){
-    b2.style.backgroundImage=`url('${imgs[i]}')`;
-    b2.style.opacity=1;
-    b1.style.opacity=0;
+    bg2.style.backgroundImage=`url('${images[i]}')`;
+    bg2.style.opacity=1;
+    bg1.style.opacity=0;
   }else{
-    b1.style.backgroundImage=`url('${imgs[i]}')`;
-    b1.style.opacity=1;
-    b2.style.opacity=0;
+    bg1.style.backgroundImage=`url('${images[i]}')`;
+    bg1.style.opacity=1;
+    bg2.style.opacity=0;
   }
 
   show=!show;
-  i=(i+1)%imgs.length;
+  i=(i+1)%images.length;
 }
-bg();
-setInterval(bg,15000);
+
+gantiBG();
+setInterval(gantiBG,15000);
 
 </script>
 
