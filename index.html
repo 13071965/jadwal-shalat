@@ -10,14 +10,26 @@ body{
   font-family:Arial;
   color:white;
   text-align:center;
+  overflow:hidden;
   background:#111;
 }
 
+/* BACKGROUND SLIDESHOW */
 .bg{
   position:fixed;
   width:100%;
   height:100%;
-  background:url("https://picsum.photos/1280/720") center/cover no-repeat;
+  background-size:cover;
+  background-position:center;
+  transition:opacity 1.5s;
+  z-index:-2;
+}
+
+.overlay{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.4);
   z-index:-1;
 }
 
@@ -27,17 +39,22 @@ body{
   flex-direction:column;
   justify-content:center;
   align-items:center;
+  gap:8px;
 }
 
-h1{font-size:60px;margin:10px;}
+h1{font-size:60px;margin:5px;}
 .small{font-size:20px;}
-.green{color:#00ff88;font-size:22px;margin:10px;}
+.green{color:#00ff88;font-size:22px;}
+.jadwal{font-size:18px;line-height:1.4;}
+.active{color:#00ff88;font-weight:bold;}
 </style>
 </head>
 
 <body>
 
-<div class="bg"></div>
+<div id="bg1" class="bg"></div>
+<div id="bg2" class="bg" style="opacity:0"></div>
+<div class="overlay"></div>
 
 <div class="container">
 
@@ -45,35 +62,58 @@ h1{font-size:60px;margin:10px;}
 <h1 id="jam">--:--:--</h1>
 
 <div class="small" id="tanggal"></div>
+<div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
-<div class="small">Medan</div>
+<div class="small" id="cuaca"></div>
 
 <div class="green" id="countdown"></div>
 
-<div id="jadwal"></div>
+<div class="jadwal" id="jadwal"></div>
 
 </div>
 
 <script>
 
-/* JAM SIMPLE */
+/* ================= */
+/* JAM */
+/* ================= */
 function updateJam(){
   var now=new Date();
 
-  var h=now.getHours().toString().padStart(2,'0');
-  var m=now.getMinutes().toString().padStart(2,'0');
-  var s=now.getSeconds().toString().padStart(2,'0');
+  var h=String(now.getHours()).padStart(2,'0');
+  var m=String(now.getMinutes()).padStart(2,'0');
+  var s=String(now.getSeconds()).padStart(2,'0');
 
   document.getElementById("jam").innerHTML=h+"."+m+"."+s;
 
-  document.getElementById("tanggal").innerHTML=
-    now.toDateString();
+  document.getElementById("tanggal").innerHTML=now.toDateString();
 }
-
 setInterval(updateJam,1000);
 
 
+/* ================= */
+/* HIJRI MANUAL (ANTI ERROR TV) */
+/* ================= */
+document.getElementById("hijri").innerHTML="18 Shawwal 1447 H";
+
+
+/* ================= */
+/* CUACA (AMAN) */
+/* ================= */
+fetch("https://api.open-meteo.com/v1/forecast?latitude=3.6&longitude=98.6&current_weather=true")
+.then(r=>r.json())
+.then(d=>{
+  document.getElementById("cuaca").innerHTML=
+    d.current_weather.temperature+"°C - Medan";
+})
+.catch(()=>{
+  document.getElementById("cuaca").innerHTML="Medan";
+});
+
+
+/* ================= */
 /* JADWAL */
+/* ================= */
 var jadwal={
   "Subuh":"05:06",
   "Dzuhur":"12:28",
@@ -101,7 +141,8 @@ function updateJadwal(){
       nextTime=sec;
     }
 
-    html+="<div>"+k+" - "+jadwal[k]+"</div>";
+    html+="<div class='"+(k===nextName?"active":"")+"'>"+
+          k+" - "+jadwal[k]+"</div>";
   }
 
   if(nextName===""){
@@ -114,14 +155,48 @@ function updateJadwal(){
 
   var j=Math.floor(sisa/3600);
   var m=Math.floor((sisa%3600)/60);
+  var d=sisa%60;
 
   document.getElementById("countdown").innerHTML=
-    "Menuju "+nextName+": "+j+"j "+m+"m";
+    "Menuju "+nextName+": "+j+"j "+m+"m "+d+"d";
 
   document.getElementById("jadwal").innerHTML=html;
 }
 
 setInterval(updateJadwal,1000);
+
+
+/* ================= */
+/* SLIDESHOW (RINGAN & AMAN TV) */
+/* ================= */
+var images=[
+ "https://picsum.photos/1280/720?1",
+ "https://picsum.photos/1280/720?2",
+ "https://picsum.photos/1280/720?3"
+];
+
+var i=0;
+var bg1=document.getElementById("bg1");
+var bg2=document.getElementById("bg2");
+
+bg1.style.backgroundImage="url("+images[0]+")";
+
+function slide(){
+  var next=(i+1)%images.length;
+
+  bg2.style.backgroundImage="url("+images[next]+")";
+  bg2.style.opacity=1;
+  bg1.style.opacity=0;
+
+  setTimeout(function(){
+    bg1.style.backgroundImage="url("+images[next]+")";
+    bg1.style.opacity=1;
+    bg2.style.opacity=0;
+    i=next;
+  },1500);
+}
+
+setInterval(slide,10000);
 
 </script>
 
