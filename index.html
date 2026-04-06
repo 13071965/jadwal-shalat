@@ -5,10 +5,6 @@
 <title>Jadwal Shalat</title>
 
 <style>
-:root{
-  --scale: 1.8; /* otomatis besar untuk TV */
-}
-
 body {
   margin: 0;
   overflow: hidden;
@@ -17,6 +13,7 @@ body {
   background: black;
 }
 
+/* BACKGROUND */
 .bg {
   position: fixed;
   width: 100%;
@@ -30,30 +27,56 @@ body {
 #bg1 { z-index: -2; }
 #bg2 { z-index: -3; }
 
+/* OVERLAY */
 .overlay {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.25);
 }
 
+/* CONTENT */
 .content {
   position: absolute;
   width: 100%;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(var(--scale));
+  transform: translateY(-50%);
   text-align: center;
+  padding: 20px;
 }
 
-/* FONT */
-h1 { font-size: 100px; margin: 0; }
-.small { font-size: 30px; }
-.jadwal { font-size: 30px; line-height: 1.8; }
-.active { font-size: 34px; color: #00ff88; font-weight: bold; }
-.green { font-size: 36px; color: #00ffaa; margin-top: 10px; }
+/* FONT BESAR & JELAS */
+h1 { 
+  font-size: 140px; 
+  margin: 0;
+}
 
-* { text-shadow: 0 0 15px rgba(0,0,0,0.9); }
+.small { 
+  font-size: 40px; 
+}
+
+.jadwal {
+  margin-top: 30px;
+  font-size: 40px;
+  line-height: 2;
+}
+
+.active {
+  color: #00ff88;
+  font-weight: bold;
+  font-size: 44px;
+}
+
+.green {
+  color: #00ffaa;
+  margin-top: 20px;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+* {
+  text-shadow: 0 0 15px rgba(0,0,0,0.9);
+}
 </style>
 </head>
 
@@ -74,13 +97,11 @@ h1 { font-size: 100px; margin: 0; }
   <div class="small" id="cuaca"></div>
 
   <div class="green" id="countdown"></div>
+
   <div class="jadwal" id="jadwal"></div>
 </div>
 
 <script>
-
-// ================= FULLSCREEN AUTO =================
-document.documentElement.requestFullscreen?.().catch(()=>{});
 
 // ================= ANTI SCREENSAVER =================
 setInterval(()=>{
@@ -89,11 +110,12 @@ setInterval(()=>{
 
 // ================= JAM =================
 setInterval(()=>{
-  clock.innerText = new Date().toLocaleTimeString("id-ID");
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString("id-ID");
 },1000);
 
 // ================= TANGGAL =================
-tanggal.innerText =
+document.getElementById("tanggal").innerText =
   new Date().toLocaleDateString("id-ID", {
     weekday:"long", day:"numeric", month:"long", year:"numeric"
   });
@@ -103,24 +125,30 @@ fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
   const h = d.data.hijri;
-  hijri.innerText = `${h.day} ${h.month.en} ${h.year} H`;
+  document.getElementById("hijri").innerText =
+    `${h.day} ${h.month.en} ${h.year} H`;
 });
 
 // ================= CUACA =================
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
-  cuaca.innerText = `${d.current_weather.temperature}°C - Medan`;
+  document.getElementById("cuaca").innerText =
+    `${d.current_weather.temperature}°C - Medan`;
+})
+.catch(()=>{
+  document.getElementById("cuaca").innerText = "Medan";
 });
 
 // ================= JADWAL =================
-let jadwal={};
+let jadwal = {};
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 .then(r=>r.json())
 .then(d=>{
-  const t=d.data.timings;
-  jadwal={
+  const t = d.data.timings;
+
+  jadwal = {
     Subuh:t.Fajr,
     Dzuhur:t.Dhuhr,
     Ashar:t.Asr,
@@ -130,26 +158,55 @@ fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 });
 
 // ================= RENDER =================
-function render(){
-  if(!Object.keys(jadwal).length) return;
+function renderJadwal(){
 
-  let html="";
-  for(const [n,t] of Object.entries(jadwal)){
-    html+=`<div>${n} - ${t}</div>`;
+  if(Object.keys(jadwal).length===0) return;
+
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  let active = "";
+
+  const list = Object.entries(jadwal);
+
+  for(let i=0;i<list.length;i++){
+    const [name,time] = list[i];
+    const [h,m] = time.split(":").map(Number);
+    const tMin = h*60 + m;
+
+    let nextMin = 1440;
+
+    if(list[i+1]){
+      const [nh,nm] = list[i+1][1].split(":").map(Number);
+      nextMin = nh*60 + nm;
+    }
+
+    if(nowMin >= tMin && nowMin < nextMin){
+      active = name;
+    }
   }
-  jadwalEl.innerHTML=html;
+
+  let html = "";
+
+  for(const [name,time] of Object.entries(jadwal)){
+    if(name === active){
+      html += `<div class="active">${name} - ${time}</div>`;
+    } else {
+      html += `<div>${name} - ${time}</div>`;
+    }
+  }
+
+  document.getElementById("jadwal").innerHTML = html;
 }
 
-setInterval(()=>{
-  render();
-},1000);
+setInterval(renderJadwal,1000);
 
 // ================= COUNTDOWN =================
 setInterval(()=>{
-  if(!Object.keys(jadwal).length) return;
+  if(Object.keys(jadwal).length===0) return;
 
-  const now=new Date();
-  const nowMin=now.getHours()*60+now.getMinutes();
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
 
   let nextName="";
   let nextTime=null;
@@ -180,7 +237,8 @@ setInterval(()=>{
   const m=Math.floor((diff%3600000)/60000);
   const s=Math.floor((diff%60000)/1000);
 
-  countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
+  document.getElementById("countdown").innerText =
+    `Menuju ${nextName}: ${h}j ${m}m ${s}d`;
 
 },1000);
 
@@ -190,27 +248,36 @@ for(let i=1;i<=165;i++){
   images.push(`bg (${i}).jpg`);
 }
 
-let i=0,show=true;
+images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 
-function bg(){
-  let b1=bg1,b2=bg2;
+let i=0;
+let show1=true;
 
-  if(show){
-    b2.style.backgroundImage=`url('${images[i]}')`;
-    b2.style.opacity=1;
-    b1.style.opacity=0;
-  }else{
-    b1.style.backgroundImage=`url('${images[i]}')`;
-    b1.style.opacity=1;
-    b2.style.opacity=0;
-  }
+function gantiBG(){
+  const bg1=document.getElementById("bg1");
+  const bg2=document.getElementById("bg2");
 
-  show=!show;
-  i=(i+1)%images.length;
+  const img=new Image();
+  img.src=images[i];
+
+  img.onload=()=>{
+    if(show1){
+      bg2.style.backgroundImage=`url('${images[i]}')`;
+      bg2.style.opacity=1;
+      bg1.style.opacity=0;
+    }else{
+      bg1.style.backgroundImage=`url('${images[i]}')`;
+      bg1.style.opacity=1;
+      bg2.style.opacity=0;
+    }
+
+    show1=!show1;
+    i=(i+1)%images.length;
+  };
 }
 
-bg();
-setInterval(bg,15000);
+gantiBG();
+setInterval(gantiBG,15000);
 
 </script>
 
