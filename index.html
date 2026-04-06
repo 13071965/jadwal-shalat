@@ -2,96 +2,58 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Jadwal Shalat</title>
+<title>Jadwal Shalat Display</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
- margin:0;
- overflow:hidden;
- font-family:Arial;
- color:white;
- background:black;
- cursor:none;
+body {
+  margin:0;
+  overflow:hidden;
+  font-family:Arial;
+  color:white;
+  background:black;
+  cursor:none;
 }
 
-/* FULL */
-.wrapper{
- position:fixed;
- width:100vw;
- height:100vh;
- overflow:hidden;
-}
-
-/* BG */
 .bg{
- position:absolute;
- width:100%;
- height:100%;
- background-size:cover;
- background-position:center;
- transition:opacity 2s;
+  position:fixed;
+  width:100%;
+  height:100%;
+  background-size:cover;
+  background-position:center;
+  transition:opacity 2s ease-in-out;
 }
 
-#bg1{z-index:-2;opacity:1;}
-#bg2{z-index:-3;opacity:0;}
+#bg1{z-index:-2; opacity:1;}
+#bg2{z-index:-3; opacity:0;}
 
 .overlay{
- position:absolute;
- width:100%;
- height:100%;
- background:rgba(0,0,0,0.45);
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.45);
 }
 
-/* 🔥 RESPONSIVE FIX */
 .content{
- position:absolute;
- width:100%;
- top:50%;
- left:50%;
- transform:translate(-50%,-50%);
- text-align:center;
-
- padding:3vh 5vw;
- box-sizing:border-box;
+  position:absolute;
+  width:100%;
+  top:50%;
+  transform:translateY(-50%);
+  text-align:center;
 }
 
-/* 🔥 SIZE AMAN */
-h1{
- font-size:clamp(40px, 8vw, 120px);
- margin:10px 0;
-}
+h1{font-size:10vw;margin:0;}
+.small{font-size:3vw;}
+.jadwal{font-size:2.8vw;margin-top:20px;line-height:1.8;}
+.active{color:#00ff88;font-weight:bold;font-size:3vw;}
+.green{color:#00ffaa;font-size:3vw;margin-top:10px;}
 
-.small{
- font-size:clamp(14px, 2.5vw, 28px);
-}
-
-.jadwal{
- font-size:clamp(14px, 2.3vw, 26px);
- margin-top:15px;
- line-height:1.7;
-}
-
-.active{
- color:#00ff88;
- font-weight:bold;
-}
-
-.green{
- color:#00ffaa;
- font-size:clamp(14px, 2.5vw, 28px);
- margin-top:10px;
-}
-
-*{
- text-shadow:0 0 15px rgba(0,0,0,1);
-}
+*{text-shadow:0 0 20px rgba(0,0,0,1);}
 </style>
 </head>
 
 <body>
-
-<div class="wrapper">
 
 <div id="bg1" class="bg"></div>
 <div id="bg2" class="bg"></div>
@@ -99,135 +61,147 @@ h1{
 <div class="overlay"></div>
 
 <div class="content">
-
 <div class="small">JADWAL SHALAT</div>
 <h1 id="clock"></h1>
-
 <div class="small" id="tanggal"></div>
 <div class="small" id="hijri"></div>
 <div class="small">Cinta Damai, Medan Helvetia</div>
 <div class="small" id="cuaca"></div>
-
 <div class="green" id="countdown"></div>
-
-<div class="jadwal" id="jadwalDiv"></div>
-
-</div>
+<div class="jadwal" id="jadwal"></div>
 </div>
 
 <script>
 
-// JAM
+// ================= TAP 1x FULLSCREEN =================
+function goFull(){
+  let el=document.documentElement;
+  if(el.requestFullscreen){
+    el.requestFullscreen().catch(()=>{});
+  }
+}
+document.addEventListener("click", goFull);
+document.addEventListener("touchstart", goFull);
+
+// ================= JAM =================
 setInterval(()=>{
- clock.innerText=new Date().toLocaleTimeString("id-ID");
+  clock.innerText=new Date().toLocaleTimeString("id-ID");
 },1000);
 
-// TANGGAL
+// ================= TANGGAL =================
 tanggal.innerText=new Date().toLocaleDateString("id-ID",
 {weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-// HIJRI
+// ================= HIJRI =================
 fetch("https://api.aladhan.com/v1/gToH")
 .then(r=>r.json())
 .then(d=>{
- let h=d.data.hijri;
- let bulan=h.month.en.replace("Shawwal","Syawal");
- hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
+  let h=d.data.hijri;
+  let bulan=h.month.en.replace("Shawwal","Syawal");
+  hijri.innerText=`${h.day} ${bulan} ${h.year} H`;
 });
 
-// CUACA
+// ================= CUACA =================
 fetch("https://api.open-meteo.com/v1/forecast?latitude=3.5952&longitude=98.6722&current_weather=true")
 .then(r=>r.json())
 .then(d=>{
- cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+  cuaca.innerText=`${d.current_weather.temperature}°C - Medan`;
+})
+.catch(()=>{
+  cuaca.innerText="Medan";
 });
 
-// JADWAL
-let dataJadwal=null;
+// ================= JADWAL =================
+let jadwal={};
 
 fetch("https://api.aladhan.com/v1/timingsByCity?city=Medan&country=Indonesia")
 .then(r=>r.json())
 .then(d=>{
- let t=d.data.timings;
-
- dataJadwal={
-  Subuh:t.Fajr,
-  Dzuhur:t.Dhuhr,
-  Ashar:t.Asr,
-  Maghrib:t.Maghrib,
-  Isya:t.Isha
- };
-
- startLoop();
+  let t=d.data.timings;
+  jadwal={
+    Subuh:t.Fajr,
+    Dzuhur:t.Dhuhr,
+    Ashar:t.Asr,
+    Maghrib:t.Maghrib,
+    Isya:t.Isha
+  };
 });
 
-function startLoop(){
- setInterval(()=>{
+// ================= HIGHLIGHT =================
+setInterval(()=>{
+if(Object.keys(jadwal).length===0)return;
 
-  let now=new Date();
-  let nowMin=now.getHours()*60+now.getMinutes();
+let now=new Date();
+let nowMin=now.getHours()*60+now.getMinutes();
 
-  let active="";
-  let list=Object.entries(dataJadwal);
+let active="";
+let list=Object.entries(jadwal);
 
-  for(let i=0;i<list.length;i++){
-   let [n,t]=list[i];
-   let [h,m]=t.split(":").map(Number);
-   let cur=h*60+m;
+for(let i=0;i<list.length;i++){
+ let [n,t]=list[i];
+ let [h,m]=t.split(":").map(Number);
+ let cur=h*60+m;
 
-   let next=1440;
-   if(list[i+1]){
-    let [nh,nm]=list[i+1][1].split(":").map(Number);
-    next=nh*60+nm;
-   }
+ let next=1440;
+ if(list[i+1]){
+  let [nh,nm]=list[i+1][1].split(":").map(Number);
+  next=nh*60+nm;
+ }
 
-   if(nowMin>=cur&&nowMin<next) active=n;
-  }
-
-  let html="";
-  for(let [n,t] of list){
-   html+= n===active
-    ? `<div class="active">${n} - ${t}</div>`
-    : `<div>${n} - ${t}</div>`;
-  }
-
-  jadwalDiv.innerHTML=html;
-
-  // COUNTDOWN
-  let nextName="", nextTime=null;
-
-  for(let [n,t] of list){
-   let [h,m]=t.split(":").map(Number);
-   let total=h*60+m;
-
-   if(total>nowMin){
-    nextName=n;
-    nextTime=new Date();
-    nextTime.setHours(h,m,0);
-    break;
-   }
-  }
-
-  if(!nextTime){
-   let [h,m]=dataJadwal.Subuh.split(":").map(Number);
-   nextTime=new Date();
-   nextTime.setDate(nextTime.getDate()+1);
-   nextTime.setHours(h,m,0);
-   nextName="Subuh";
-  }
-
-  let diff=nextTime-now;
-
-  let h=Math.floor(diff/3600000);
-  let m=Math.floor((diff%3600000)/60000);
-  let s=Math.floor((diff%60000)/1000);
-
-  countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
-
- },1000);
+ if(nowMin>=cur&&nowMin<next)active=n;
 }
 
-// BACKGROUND
+let html="";
+for(let [n,t] of Object.entries(jadwal)){
+ html+= n===active
+ ? `<div class="active">${n} - ${t}</div>`
+ : `<div>${n} - ${t}</div>`;
+}
+
+jadwal.innerHTML=html;
+
+},1000);
+
+// ================= COUNTDOWN =================
+setInterval(()=>{
+if(Object.keys(jadwal).length===0)return;
+
+let now=new Date();
+let nowMin=now.getHours()*60+now.getMinutes();
+
+let nextName="",nextTime=null;
+
+for(let [n,t] of Object.entries(jadwal)){
+ let [h,m]=t.split(":").map(Number);
+ let total=h*60+m;
+
+ if(total>nowMin){
+  nextName=n;
+  nextTime=new Date();
+  nextTime.setHours(h,m,0);
+  break;
+ }
+}
+
+if(!nextTime){
+ let [h,m]=jadwal.Subuh.split(":").map(Number);
+ nextTime=new Date();
+ nextTime.setDate(nextTime.getDate()+1);
+ nextTime.setHours(h,m,0);
+ nextName="Subuh";
+}
+
+let diff=nextTime-now;
+
+let h=Math.floor(diff/3600000);
+let m=Math.floor((diff%3600000)/60000);
+let s=Math.floor((diff%60000)/1000);
+
+countdown.innerText=`Menuju ${nextName}: ${h}j ${m}m ${s}d`;
+
+},1000);
+
+// ================= BACKGROUND SUPER HALUS =================
 let images=[];
 for(let i=1;i<=165;i++){
  images.push(`bg (${i}).jpg`);
@@ -238,6 +212,12 @@ images.sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
 let i=0;
 let front=true;
 
+// preload awal
+for(let j=0;j<8;j++){
+ new Image().src=images[j];
+}
+
+// set awal
 bg1.style.backgroundImage=`url('${images[0]}')`;
 
 function changeBG(){
